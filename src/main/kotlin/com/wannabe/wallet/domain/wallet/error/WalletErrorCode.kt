@@ -1,4 +1,4 @@
-package com.wannabe.wallet.domain.wallet.exception
+package com.wannabe.wallet.domain.wallet.error
 
 enum class WalletErrorCode(
     val message: String,
@@ -12,8 +12,3 @@ enum class WalletErrorCode(
     CURRENCY_MISMATCH("Requested currency does not match wallet currency"),
     INVALID_AMOUNT("Amount must be greater than zero"),
 }
-
-class WalletException(
-    val code: WalletErrorCode,
-    override val message: String = code.message,
-) : RuntimeException(message)

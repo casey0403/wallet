@@ -1,6 +1,6 @@
 package com.wannabe.wallet.domain.wallet.vo
 
-import com.wannabe.wallet.domain.wallet.exception.WalletErrorCode
+import com.wannabe.wallet.domain.wallet.error.WalletErrorCode
 import com.wannabe.wallet.domain.wallet.exception.WalletException
 import java.math.BigDecimal
 

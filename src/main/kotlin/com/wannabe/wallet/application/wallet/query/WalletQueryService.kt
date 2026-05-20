@@ -2,7 +2,7 @@ package com.wannabe.wallet.application.wallet.query
 
 import com.wannabe.wallet.application.wallet.assembler.WalletAssembler
 import com.wannabe.wallet.application.wallet.dto.TransactionDTO
-import com.wannabe.wallet.domain.wallet.exception.WalletErrorCode
+import com.wannabe.wallet.domain.wallet.error.WalletErrorCode
 import com.wannabe.wallet.domain.wallet.exception.WalletException
 import com.wannabe.wallet.domain.wallet.port.WalletQueryStore
 import org.springframework.stereotype.Service

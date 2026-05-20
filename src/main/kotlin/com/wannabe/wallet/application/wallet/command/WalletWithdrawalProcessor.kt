@@ -13,7 +13,7 @@ import com.wannabe.wallet.domain.wallet.enums.TransactionType
 import com.wannabe.wallet.domain.wallet.model.Wallet
 import com.wannabe.wallet.domain.wallet.port.WalletCommandStore
 import com.wannabe.wallet.domain.wallet.service.WalletDomainService
-import com.wannabe.wallet.domain.wallet.exception.WalletErrorCode
+import com.wannabe.wallet.domain.wallet.error.WalletErrorCode
 import com.wannabe.wallet.domain.wallet.exception.WalletException
 import com.wannabe.wallet.domain.wallet.model.WalletTransaction
 import org.springframework.http.HttpStatus
