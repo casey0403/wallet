@@ -181,6 +181,8 @@ ERD 문서는 [docs/wallet-erd.html](docs/wallet-erd.html)에 정리했습니다
 presentation
   controller
   model
+    request
+    response
 application
   wallet
     assembler
@@ -189,10 +191,13 @@ application
     query
 domain
   wallet
+    enums
+    error
     exception
     model
     port
     service
+    vo
 infrastructure
   adapter
   jpa
@@ -201,7 +206,7 @@ infrastructure
 
 - `presentation`: REST API 요청/응답 모델과 컨트롤러
 - `application`: 유스케이스 조합, command/query service, assembler, application DTO
-- `domain`: 월렛 도메인 모델, 도메인 서비스, exception, port
+- `domain`: 월렛 도메인 모델, VO, enum, error code, exception, 도메인 서비스, port
 - `infrastructure`: JPA repository, `*JPAEntity`, Redis lock adapter, persistence adapter
 
 의존성 방향은 `presentation -> application -> domain <- infrastructure`를 따릅니다. application은 Redis나 JPA 구현체를 직접 참조하지 않고 `WalletLock`, `WalletCommandStore`, `WalletQueryStore` 포트에 의존합니다.
@@ -216,6 +221,81 @@ infrastructure
 4. 성공 또는 실패 거래내역을 저장합니다.
 5. 멱등성 응답 snapshot을 저장합니다.
 6. Redis lock을 Lua script로 안전하게 해제합니다.
+
+출금 API의 주요 흐름은 다음과 같습니다.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client
+    participant Controller as WalletController
+    participant CommandService as WalletCommandService
+    participant Lock as "WalletLock(Redis)"
+    participant Processor as WalletWithdrawalProcessor
+    participant Store as WalletCommandStore
+    participant DB as MySQL
+
+    Client->>Controller: POST /api/v1/wallets/{walletId}/withdrawals
+    Controller->>CommandService: withdraw(walletId, amount, currency, transactionId)
+    CommandService->>CommandService: Money 생성 및 출금 금액 검증
+    CommandService->>Lock: wallet 단위 Redis lock 획득
+
+    alt lock 획득 실패
+        Lock-->>CommandService: WALLET_BUSY
+        CommandService-->>Controller: 실패
+        Controller-->>Client: 409 ErrorResponse
+    else lock 획득 성공
+        Lock->>Processor: 출금 처리 실행
+        Processor->>Store: wallet 조회
+        Store->>DB: SELECT wallet
+        DB-->>Store: wallet
+        Store-->>Processor: wallet
+
+        Processor->>Store: idempotency request 조회
+        Store->>DB: SELECT by walletId + transactionId
+        DB-->>Store: 기존 요청 또는 없음
+
+        alt 동일 transactionId의 완료 요청 존재
+            Store-->>Processor: responseSnapshot
+            Processor-->>Lock: 이전 응답 반환
+            Lock-->>CommandService: 이전 응답
+            CommandService-->>Controller: 이전 응답
+            Controller-->>Client: 동일 응답
+        else 최초 요청
+            Processor->>Store: idempotency request PROCESSING 저장
+            Store->>DB: INSERT idempotency_requests
+
+            Processor->>Store: 조건부 atomic update
+            Store->>DB: UPDATE wallets SET balance = balance - amount, version = version + 1 WHERE id/version/balance/currency/status 조건
+
+            alt update 성공
+                DB-->>Store: updatedRows = 1
+                Processor->>Store: 성공 거래내역 저장
+                Store->>DB: INSERT wallet_transactions SUCCESS
+                Processor->>Store: responseSnapshot 저장
+                Store->>DB: UPDATE idempotency_requests COMPLETED
+                Processor-->>Lock: 성공 응답
+                Lock-->>CommandService: 성공 응답
+                CommandService-->>Controller: 성공 응답
+                Controller-->>Client: 200 TransactionResponse
+            else update 실패
+                DB-->>Store: updatedRows = 0
+                Processor->>Store: 최신 wallet 재조회
+                Store->>DB: SELECT wallet
+                Processor->>Store: 실패 거래내역 저장
+                Store->>DB: INSERT wallet_transactions FAILED
+                Processor->>Store: responseSnapshot 저장
+                Store->>DB: UPDATE idempotency_requests COMPLETED
+                Processor-->>Lock: 실패 응답
+                Lock-->>CommandService: 실패 응답
+                CommandService-->>Controller: 실패 응답
+                Controller-->>Client: 409 ErrorResponse
+            end
+        end
+
+        Lock->>Lock: Lua script로 lock token 검증 후 해제
+    end
+```
 
 DB 최종 방어선은 다음 조건부 update입니다.
 
