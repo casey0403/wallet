@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wallet Service ERD - Improved</title>
+<style>
+  :root {
+    --bg: #101114;
+    --panel: #17191f;
+    --line: #2d313b;
+    --text: #ece8df;
+    --muted: #8b91a1;
+    --pk: #e9c46a;
+    --fk: #6ea8fe;
+    --uk: #f28c5b;
+    --ok: #47b881;
+    --warn: #f1c40f;
+    --danger: #ef6f6c;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    padding: 40px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  header {
+    margin-bottom: 28px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 24px;
+    letter-spacing: 0;
+  }
+
+  .subtitle {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .canvas {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(280px, 1fr));
+    gap: 18px;
+    align-items: start;
+    overflow-x: auto;
+    padding-bottom: 20px;
+  }
+
+  .table {
+    min-width: 280px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .table header {
+    margin: 0;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .table-name {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .badge {
+    border: 1px solid var(--line);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .rows {
+    padding: 8px 0;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 34px minmax(120px, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+  }
+
+  .key {
+    font-size: 10px;
+    font-weight: 700;
+    text-align: center;
+    border-radius: 4px;
+    padding: 2px 0;
+  }
+
+  .pk { color: var(--pk); background: rgba(233, 196, 106, 0.13); }
+  .fk { color: var(--fk); background: rgba(110, 168, 254, 0.13); }
+  .uk { color: var(--uk); background: rgba(242, 140, 91, 0.13); }
+  .ck { color: var(--ok); background: rgba(71, 184, 129, 0.13); }
+  .blank { opacity: 0; }
+  .type { color: var(--muted); font-size: 11px; }
+  .divider { height: 1px; background: var(--line); margin: 6px 14px; }
+
+  .notes {
+    margin-top: 28px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    gap: 18px;
+  }
+
+  .note {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #13151a;
+    padding: 16px;
+  }
+
+  .note h2 {
+    margin: 0 0 10px;
+    font-size: 15px;
+  }
+
+  .note p, .note li {
+    color: #c7cbd6;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .note ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+
+  code {
+    color: #f2d38b;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>wallet-service ERD · 보완안</h1>
+  <div class="subtitle">Redis 분산락, 멱등성 응답 스냅샷, version 기반 atomic update를 전제로 한 테이블 구조</div>
+</header>
+
+<main class="canvas">
+  <section class="table">
+    <header>
+      <span class="table-name">users</span>
+      <span class="badge">optional root</span>
+    </header>
+    <div class="rows">
+      <div class="row"><span class="key pk">PK</span><span>id</span><span class="type">UUID</span></div>
+      <div class="row"><span class="key uk">UK</span><span>email</span><span class="type">VARCHAR(255)</span></div>
+      <div class="row"><span class="key blank">-</span><span>name</span><span class="type">VARCHAR(100)</span></div>
+      <div class="divider"></div>
+      <div class="row"><span class="key blank">-</span><span>created_at</span><span class="type">DATETIME(6)</span></div>
+      <div class="row"><span class="key blank">-</span><span>updated_at</span><span class="type">DATETIME(6)</span></div>
+    </div>
+  </section>
+
+  <section class="table">
+    <header>
+      <span class="table-name">wallets</span>
+      <span class="badge">aggregate root</span>
+    </header>
+    <div class="rows">
+      <div class="row"><span class="key pk">PK</span><span>id</span><span class="type">UUID</span></div>
+      <div class="row"><span class="key fk">FK</span><span>user_id</span><span class="type">UUID</span></div>
+      <div class="row"><span class="key uk">UK</span><span>user_id, currency</span><span class="type">UNIQUE</span></div>
+      <div class="divider"></div>
+      <div class="row"><span class="key ck">CK</span><span>balance</span><span class="type">DECIMAL(19,4)</span></div>
+      <div class="row"><span class="key blank">-</span><span>currency</span><span class="type">VARCHAR(3)</span></div>
+      <div class="row"><span class="key blank">-</span><span>version</span><span class="type">BIGINT</span></div>
+      <div class="row"><span class="key blank">-</span><span>wallet_status</span><span class="type">VARCHAR(20)</span></div>
+      <div class="divider"></div>
+      <div class="row"><span class="key blank">-</span><span>created_at</span><span class="type">DATETIME(6)</span></div>
+      <div class="row"><span class="key blank">-</span><span>updated_at</span><span class="type">DATETIME(6)</span></div>
+    </div>
+  </section>
+
+  <section class="table">
+    <header>
+      <span class="table-name">idempotency_requests</span>
+      <span class="badge">request guard</span>
+    </header>
+    <div class="rows">
+      <div class="row"><span class="key pk">PK</span><span>id</span><span class="type">BIGINT</span></div>
+      <div class="row"><span class="key fk">FK</span><span>wallet_id</span><span class="type">UUID</span></div>
+      <div class="row"><span class="key uk">UK</span><span>wallet_id, idempotency_key</span><span class="type">UNIQUE</span></div>
+      <div class="divider"></div>
+      <div class="row"><span class="key blank">-</span><span>idempotency_key</span><span class="type">VARCHAR(128)</span></div>
+      <div class="row"><span class="key blank">-</span><span>request_hash</span><span class="type">VARCHAR(64)</span></div>
+      <div class="row"><span class="key blank">-</span><span>operation_type</span><span class="type">VARCHAR(30)</span></div>
+      <div class="row"><span class="key blank">-</span><span>amount</span><span class="type">DECIMAL(19,4)</span></div>
+      <div class="row"><span class="key blank">-</span><span>currency</span><span class="type">VARCHAR(3)</span></div>
+      <div class="row"><span class="key blank">-</span><span>status</span><span class="type">VARCHAR(20)</span></div>
+      <div class="row"><span class="key blank">-</span><span>http_status</span><span class="type">INT</span></div>
+      <div class="row"><span class="key blank">-</span><span>response_snapshot</span><span class="type">JSON</span></div>
+      <div class="divider"></div>
+      <div class="row"><span class="key blank">-</span><span>created_at</span><span class="type">DATETIME(6)</span></div>
+      <div class="row"><span class="key blank">-</span><span>completed_at</span><span class="type">DATETIME(6)?</span></div>
+      <div class="row"><span class="key blank">-</span><span>expires_at</span><span class="type">DATETIME(6)</span></div>
+    </div>
+  </section>
+
+  <section class="table">
+    <header>
+      <span class="table-name">wallet_transactions</span>
+      <span class="badge">ledger</span>
+    </header>
+    <div class="rows">
+      <div class="row"><span class="key pk">PK</span><span>id</span><span class="type">BIGINT</span></div>
+      <div class="row"><span class="key fk">FK</span><span>wallet_id</span><span class="type">UUID</span></div>
+      <div class="row"><span class="key fk">FK</span><span>idempotency_request_id</span><span class="type">BIGINT</span></div>
+      <div class="row"><span class="key uk">UK</span><span>wallet_id, transaction_id</span><span class="type">UNIQUE</span></div>
+      <div class="row"><span class="key uk">UK</span><span>idempotency_request_id</span><span class="type">UNIQUE</span></div>
+      <div class="divider"></div>
+      <div class="row"><span class="key blank">-</span><span>transaction_id</span><span class="type">VARCHAR(128)</span></div>
+      <div class="row"><span class="key blank">-</span><span>type</span><span class="type">VARCHAR(20)</span></div>
+      <div class="row"><span class="key blank">-</span><span>status</span><span class="type">VARCHAR(20)</span></div>
+      <div class="row"><span class="key blank">-</span><span>amount</span><span class="type">DECIMAL(19,4)</span></div>
+      <div class="row"><span class="key blank">-</span><span>currency</span><span class="type">VARCHAR(3)</span></div>
+      <div class="row"><span class="key blank">-</span><span>balance_before</span><span class="type">DECIMAL(19,4)</span></div>
+      <div class="row"><span class="key blank">-</span><span>balance_after</span><span class="type">DECIMAL(19,4)</span></div>
+      <div class="row"><span class="key blank">-</span><span>wallet_version_before</span><span class="type">BIGINT</span></div>
+      <div class="row"><span class="key blank">-</span><span>wallet_version_after</span><span class="type">BIGINT</span></div>
+      <div class="row"><span class="key blank">-</span><span>failure_code</span><span class="type">VARCHAR(50)?</span></div>
+      <div class="row"><span class="key blank">-</span><span>failure_message</span><span class="type">VARCHAR(255)?</span></div>
+      <div class="divider"></div>
+      <div class="row"><span class="key blank">-</span><span>processed_at</span><span class="type">DATETIME(6)</span></div>
+    </div>
+  </section>
+</main>
+
+<section class="notes">
+  <article class="note">
+    <h2>동시성 보장</h2>
+    <ul>
+      <li>Redis lock key는 <code>wallet:withdraw:{walletId}</code> 단위로 잡습니다.</li>
+      <li>DB 최종 방어선은 <code>UPDATE wallets SET balance = balance - :amount, version = version + 1 WHERE id = :walletId AND version = :version AND balance &gt;= :amount AND wallet_status = 'ACTIVE'</code>입니다.</li>
+      <li>Redis lock이 만료되거나 중복 실행되어도 조건부 update가 overdraft와 lost update를 막습니다.</li>
+    </ul>
+  </article>
+
+  <article class="note">
+    <h2>멱등성 보장</h2>
+    <ul>
+      <li><code>idempotency_requests</code>는 <code>wallet_id, idempotency_key</code> unique constraint로 중복 요청을 막습니다.</li>
+      <li>같은 key인데 <code>request_hash</code>가 다르면 409 conflict로 처리합니다.</li>
+      <li>성공/실패 모두 <code>response_snapshot</code>에 저장해서 재요청 시 동일 응답을 반환합니다.</li>
+    </ul>
+  </article>
+</section>
+</body>
+</html>
