@@ -5,11 +5,11 @@ import com.wannabe.wallet.application.wallet.dto.TransactionDTO
 import com.wannabe.wallet.application.wallet.dto.WithdrawalResultDTO
 import com.wannabe.wallet.application.wallet.assembler.WalletAssembler
 import com.wannabe.wallet.domain.wallet.model.IdempotencyRequest
-import com.wannabe.wallet.domain.wallet.model.IdempotencyStatus
-import com.wannabe.wallet.domain.wallet.model.Money
-import com.wannabe.wallet.domain.wallet.model.OperationType
-import com.wannabe.wallet.domain.wallet.model.TransactionStatus
-import com.wannabe.wallet.domain.wallet.model.TransactionType
+import com.wannabe.wallet.domain.wallet.enums.IdempotencyStatus
+import com.wannabe.wallet.domain.wallet.vo.Money
+import com.wannabe.wallet.domain.wallet.enums.OperationType
+import com.wannabe.wallet.domain.wallet.enums.TransactionStatus
+import com.wannabe.wallet.domain.wallet.enums.TransactionType
 import com.wannabe.wallet.domain.wallet.model.Wallet
 import com.wannabe.wallet.domain.wallet.port.WalletCommandStore
 import com.wannabe.wallet.domain.wallet.service.WalletDomainService
@@ -33,10 +33,20 @@ class WalletWithdrawalProcessor(
         val wallet = walletCommandStore.findWallet(walletId)
             ?: throw WalletException(WalletErrorCode.WALLET_NOT_FOUND)
 
-        walletDomainService.validateCurrency(wallet, money)
+        walletDomainService.validateCurrency(
+            wallet = wallet,
+            money = money,
+        )
 
-        val requestHash = walletDomainService.withdrawalRequestHash(walletId, money, transactionId)
-        val existing = walletCommandStore.findIdempotencyRequest(walletId, transactionId)
+        val requestHash = walletDomainService.withdrawalRequestHash(
+            walletId = walletId,
+            money = money,
+            transactionId = transactionId,
+        )
+        val existing = walletCommandStore.findIdempotencyRequest(
+            walletId = walletId,
+            idempotencyKey = transactionId,
+        )
 
         if (existing != null) {
             return existing.toResult(requestHash)
@@ -53,8 +63,16 @@ class WalletWithdrawalProcessor(
             ),
         )
 
-        val result = executeFirstWithdrawal(wallet, idempotencyRequest, money, transactionId)
-        idempotencyRequest.complete(result.httpStatus, objectMapper.writeValueAsString(result.body))
+        val result = executeFirstWithdrawal(
+            wallet = wallet,
+            idempotencyRequest = idempotencyRequest,
+            money = money,
+            transactionId = transactionId,
+        )
+        idempotencyRequest.complete(
+            httpStatus = result.httpStatus,
+            responseSnapshot = objectMapper.writeValueAsString(result.body),
+        )
         walletCommandStore.saveIdempotencyRequest(idempotencyRequest)
         return result
     }
@@ -137,7 +155,10 @@ class WalletWithdrawalProcessor(
             ),
         )
 
-        return WithdrawalResultDTO(HttpStatus.OK.value(), walletAssembler.toResult(transaction))
+        return WithdrawalResultDTO(
+            httpStatus = HttpStatus.OK.value(),
+            body = walletAssembler.toResult(transaction),
+        )
     }
 
     private fun recordFailure(
@@ -165,7 +186,10 @@ class WalletWithdrawalProcessor(
                 failureMessage = errorCode.message,
             ),
         )
-        return WithdrawalResultDTO(errorCode.httpStatus(), walletAssembler.toResult(transaction))
+        return WithdrawalResultDTO(
+            httpStatus = errorCode.httpStatus(),
+            body = walletAssembler.toResult(transaction),
+        )
     }
 
     private fun WalletErrorCode.httpStatus(): Int {

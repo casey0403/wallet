@@ -1,8 +1,8 @@
 package com.wannabe.wallet.infrastructure.jpa.entity
 
-import com.wannabe.wallet.domain.wallet.model.Money
-import com.wannabe.wallet.domain.wallet.model.TransactionStatus
-import com.wannabe.wallet.domain.wallet.model.TransactionType
+import com.wannabe.wallet.domain.wallet.vo.Money
+import com.wannabe.wallet.domain.wallet.enums.TransactionStatus
+import com.wannabe.wallet.domain.wallet.enums.TransactionType
 import com.wannabe.wallet.domain.wallet.model.WalletTransaction
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -88,9 +88,18 @@ class WalletTransactionJPAEntity(
             idempotencyRequest = idempotencyRequest.toDomain(),
             type = type,
             status = status,
-            money = Money(amount, currency),
-            balanceBefore = Money(balanceBefore, currency),
-            balanceAfter = Money(balanceAfter, currency),
+            money = Money(
+                amount = amount,
+                currency = currency,
+            ),
+            balanceBefore = Money(
+                amount = balanceBefore,
+                currency = currency,
+            ),
+            balanceAfter = Money(
+                amount = balanceAfter,
+                currency = currency,
+            ),
             walletVersionBefore = walletVersionBefore,
             walletVersionAfter = walletVersionAfter,
             failureCode = failureCode,

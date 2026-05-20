@@ -1,5 +1,8 @@
 package com.wannabe.wallet.domain.wallet.model
 
+import com.wannabe.wallet.domain.wallet.enums.TransactionStatus
+import com.wannabe.wallet.domain.wallet.enums.TransactionType
+import com.wannabe.wallet.domain.wallet.vo.Money
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -19,12 +22,3 @@ class WalletTransaction(
     val failureMessage: String? = null,
     val processedAt: LocalDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS),
 )
-
-enum class TransactionType {
-    WITHDRAWAL,
-}
-
-enum class TransactionStatus {
-    SUCCESS,
-    FAILED,
-}

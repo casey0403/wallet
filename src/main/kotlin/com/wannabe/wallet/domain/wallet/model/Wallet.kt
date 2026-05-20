@@ -1,5 +1,8 @@
 package com.wannabe.wallet.domain.wallet.model
 
+import com.wannabe.wallet.domain.wallet.enums.WalletStatus
+import com.wannabe.wallet.domain.wallet.vo.Money
+
 class Wallet(
     val walletId: String,
     val balance: Money,
@@ -9,9 +12,4 @@ class Wallet(
 ) {
     val currency: String
         get() = balance.currency
-}
-
-enum class WalletStatus {
-    ACTIVE,
-    SUSPENDED,
 }

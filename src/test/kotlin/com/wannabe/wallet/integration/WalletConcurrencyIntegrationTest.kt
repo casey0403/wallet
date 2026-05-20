@@ -1,12 +1,12 @@
 package com.wannabe.wallet.integration
 
 import com.wannabe.wallet.TestcontainersConfiguration
-import com.wannabe.wallet.domain.wallet.model.TransactionStatus
+import com.wannabe.wallet.domain.wallet.enums.TransactionStatus
 import com.wannabe.wallet.infrastructure.jpa.IdempotencyRequestJpaRepository
 import com.wannabe.wallet.infrastructure.jpa.WalletJpaRepository
 import com.wannabe.wallet.infrastructure.jpa.WalletTransactionJpaRepository
 import com.wannabe.wallet.infrastructure.jpa.entity.WalletJPAEntity
-import com.wannabe.wallet.presentation.model.WithdrawalRequest
+import com.wannabe.wallet.presentation.model.request.WithdrawalRequest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -130,7 +130,12 @@ class WalletConcurrencyIntegrationTest @Autowired constructor(
                     restTemplate.exchange(
                         "/api/v1/wallets/$walletId/withdrawals",
                         HttpMethod.POST,
-                        HttpEntity(WithdrawalRequest(withdrawalAmount, "TXN-$index")),
+                        HttpEntity(
+                            WithdrawalRequest(
+                                amount = withdrawalAmount,
+                                transactionId = "TXN-$index",
+                            ),
+                        ),
                         String::class.java,
                     )
                 } finally {

@@ -2,8 +2,8 @@ package com.wannabe.wallet.domain.wallet.service
 
 import com.wannabe.wallet.domain.wallet.exception.WalletErrorCode
 import com.wannabe.wallet.domain.wallet.exception.WalletException
-import com.wannabe.wallet.domain.wallet.model.Money
-import com.wannabe.wallet.domain.wallet.model.RequestHash
+import com.wannabe.wallet.domain.wallet.vo.Money
+import com.wannabe.wallet.domain.wallet.vo.RequestHash
 import com.wannabe.wallet.domain.wallet.model.Wallet
 
 class WalletDomainService {
@@ -24,6 +24,10 @@ class WalletDomainService {
         money: Money,
         transactionId: String,
     ): String {
-        return RequestHash.withdrawal(walletId, money, transactionId)
+        return RequestHash.withdrawal(
+            walletId = walletId,
+            money = money,
+            transactionId = transactionId,
+        )
     }
 }

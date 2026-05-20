@@ -1,5 +1,8 @@
 package com.wannabe.wallet.domain.wallet.model
 
+import com.wannabe.wallet.domain.wallet.enums.IdempotencyStatus
+import com.wannabe.wallet.domain.wallet.enums.OperationType
+import com.wannabe.wallet.domain.wallet.vo.Money
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -23,13 +26,4 @@ class IdempotencyRequest(
         this.responseSnapshot = responseSnapshot
         this.completedAt = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS)
     }
-}
-
-enum class OperationType {
-    WITHDRAWAL,
-}
-
-enum class IdempotencyStatus {
-    PROCESSING,
-    COMPLETED,
 }

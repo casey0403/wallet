@@ -1,8 +1,8 @@
 package com.wannabe.wallet.infrastructure.jpa.entity
 
-import com.wannabe.wallet.domain.wallet.model.Money
+import com.wannabe.wallet.domain.wallet.vo.Money
 import com.wannabe.wallet.domain.wallet.model.Wallet
-import com.wannabe.wallet.domain.wallet.model.WalletStatus
+import com.wannabe.wallet.domain.wallet.enums.WalletStatus
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -44,7 +44,10 @@ class WalletJPAEntity(
     fun toDomain(): Wallet {
         return Wallet(
             walletId = walletId,
-            balance = Money(balance, currency),
+            balance = Money(
+                amount = balance,
+                currency = currency,
+            ),
             userId = userId,
             version = version,
             walletStatus = walletStatus,

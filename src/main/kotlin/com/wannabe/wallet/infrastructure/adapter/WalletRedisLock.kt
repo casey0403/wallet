@@ -26,7 +26,12 @@ class WalletRedisLock(
     override fun <T> execute(walletId: String, block: () -> T): T {
         val key = "wallet:withdraw:$walletId"
         val token = UUID.randomUUID().toString()
-        val acquired = tryLock(key, token, waitTimeout = Duration.ofSeconds(10), leaseTime = Duration.ofSeconds(5))
+        val acquired = tryLock(
+            key = key,
+            token = token,
+            waitTimeout = Duration.ofSeconds(10),
+            leaseTime = Duration.ofSeconds(5),
+        )
 
         if (!acquired) {
             throw WalletException(WalletErrorCode.WALLET_BUSY)

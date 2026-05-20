@@ -1,7 +1,7 @@
 package com.wannabe.wallet.application.wallet.command
 
 import com.wannabe.wallet.application.wallet.dto.WithdrawalResultDTO
-import com.wannabe.wallet.domain.wallet.model.Money
+import com.wannabe.wallet.domain.wallet.vo.Money
 import com.wannabe.wallet.domain.wallet.port.WalletLock
 import com.wannabe.wallet.domain.wallet.service.WalletDomainService
 import org.springframework.stereotype.Service
@@ -14,11 +14,18 @@ class WalletCommandService(
     private val walletWithdrawalProcessor: WalletWithdrawalProcessor,
 ) {
     fun withdraw(walletId: String, amount: BigDecimal, currency: String, transactionId: String): WithdrawalResultDTO {
-        val money = Money(amount, currency)
+        val money = Money(
+            amount = amount,
+            currency = currency,
+        )
         walletDomainService.validateWithdrawalAmount(money)
 
-        return walletLock.execute(walletId) {
-            walletWithdrawalProcessor.withdraw(walletId, money, transactionId)
+        return walletLock.execute(walletId = walletId) {
+            walletWithdrawalProcessor.withdraw(
+                walletId = walletId,
+                money = money,
+                transactionId = transactionId,
+            )
         }
     }
 }

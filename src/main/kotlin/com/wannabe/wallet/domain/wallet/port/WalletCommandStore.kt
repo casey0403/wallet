@@ -1,7 +1,7 @@
 package com.wannabe.wallet.domain.wallet.port
 
 import com.wannabe.wallet.domain.wallet.model.IdempotencyRequest
-import com.wannabe.wallet.domain.wallet.model.Money
+import com.wannabe.wallet.domain.wallet.vo.Money
 import com.wannabe.wallet.domain.wallet.model.Wallet
 import com.wannabe.wallet.domain.wallet.model.WalletTransaction
 

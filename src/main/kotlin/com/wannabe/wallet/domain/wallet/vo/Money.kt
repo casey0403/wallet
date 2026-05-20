@@ -1,4 +1,4 @@
-package com.wannabe.wallet.domain.wallet.model
+package com.wannabe.wallet.domain.wallet.vo
 
 import com.wannabe.wallet.domain.wallet.exception.WalletErrorCode
 import com.wannabe.wallet.domain.wallet.exception.WalletException

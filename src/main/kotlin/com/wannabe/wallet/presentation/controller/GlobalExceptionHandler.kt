@@ -2,7 +2,7 @@ package com.wannabe.wallet.presentation.controller
 
 import com.wannabe.wallet.domain.wallet.exception.WalletException
 import com.wannabe.wallet.domain.wallet.exception.WalletErrorCode
-import com.wannabe.wallet.presentation.model.ErrorResponse
+import com.wannabe.wallet.presentation.model.response.ErrorResponse
 import jakarta.validation.ConstraintViolationException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity

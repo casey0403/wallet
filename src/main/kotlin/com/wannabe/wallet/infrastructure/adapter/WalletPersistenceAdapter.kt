@@ -1,7 +1,7 @@
 package com.wannabe.wallet.infrastructure.adapter
 
 import com.wannabe.wallet.domain.wallet.model.IdempotencyRequest
-import com.wannabe.wallet.domain.wallet.model.Money
+import com.wannabe.wallet.domain.wallet.vo.Money
 import com.wannabe.wallet.domain.wallet.model.Wallet
 import com.wannabe.wallet.domain.wallet.model.WalletTransaction
 import com.wannabe.wallet.domain.wallet.port.WalletCommandStore
@@ -24,14 +24,19 @@ class WalletPersistenceAdapter(
 
     override fun findIdempotencyRequest(walletId: String, idempotencyKey: String): IdempotencyRequest? {
         return idempotencyRequestJpaRepository
-            .findByWalletWalletIdAndIdempotencyKey(walletId, idempotencyKey)
+            .findByWalletWalletIdAndIdempotencyKey(
+                walletId = walletId,
+                idempotencyKey = idempotencyKey,
+            )
             .map { it.toDomain() }
             .orElse(null)
     }
 
     override fun saveIdempotencyRequest(idempotencyRequest: IdempotencyRequest): IdempotencyRequest {
         val walletJPAEntity = walletJpaRepository.getReferenceById(idempotencyRequest.wallet.walletId)
-        return idempotencyRequestJpaRepository.saveAndFlush(idempotencyRequest.toJPAEntity(walletJPAEntity)).toDomain()
+        return idempotencyRequestJpaRepository.saveAndFlush(
+            idempotencyRequest.toJPAEntity(walletJPAEntity = walletJPAEntity),
+        ).toDomain()
     }
 
     override fun withdrawIfVersionMatches(
@@ -39,14 +44,22 @@ class WalletPersistenceAdapter(
         version: Long,
         money: Money,
     ): Int {
-        return walletJpaRepository.withdrawIfVersionMatches(walletId, version, money.amount, money.currency)
+        return walletJpaRepository.withdrawIfVersionMatches(
+            walletId = walletId,
+            version = version,
+            amount = money.amount,
+            currency = money.currency,
+        )
     }
 
     override fun saveTransaction(transaction: WalletTransaction): WalletTransaction {
         val walletJPAEntity = walletJpaRepository.getReferenceById(transaction.wallet.walletId)
         val idempotencyRequestJPAEntity = idempotencyRequestJpaRepository.getReferenceById(transaction.idempotencyRequest.id)
         return walletTransactionJpaRepository.save(
-            transaction.toJPAEntity(walletJPAEntity, idempotencyRequestJPAEntity),
+            transaction.toJPAEntity(
+                walletJPAEntity = walletJPAEntity,
+                idempotencyRequestJPAEntity = idempotencyRequestJPAEntity,
+            ),
         ).toDomain()
     }
 

@@ -1,22 +1,8 @@
-package com.wannabe.wallet.presentation.model
+package com.wannabe.wallet.presentation.model.response
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import jakarta.validation.constraints.DecimalMin
-import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.Pattern
 import java.math.BigDecimal
 import java.time.LocalDateTime
-
-data class WithdrawalRequest(
-    @field:DecimalMin(value = "0.0001")
-    val amount: BigDecimal,
-
-    @field:NotBlank
-    val transactionId: String,
-
-    @field:Pattern(regexp = "^[A-Z]{3}$")
-    val currency: String = "KRW",
-)
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class TransactionResponse(
@@ -35,10 +21,4 @@ data class TransactionResponse(
 
 data class TransactionsResponse(
     val transactions: List<TransactionResponse>,
-)
-
-data class ErrorResponse<T>(
-    val code: String,
-    val message: String,
-    val data: T? = null,
 )

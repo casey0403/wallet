@@ -1,9 +1,9 @@
 package com.wannabe.wallet.infrastructure.jpa.entity
 
 import com.wannabe.wallet.domain.wallet.model.IdempotencyRequest
-import com.wannabe.wallet.domain.wallet.model.IdempotencyStatus
-import com.wannabe.wallet.domain.wallet.model.Money
-import com.wannabe.wallet.domain.wallet.model.OperationType
+import com.wannabe.wallet.domain.wallet.enums.IdempotencyStatus
+import com.wannabe.wallet.domain.wallet.vo.Money
+import com.wannabe.wallet.domain.wallet.enums.OperationType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -78,7 +78,10 @@ class IdempotencyRequestJPAEntity(
             idempotencyKey = idempotencyKey,
             requestHash = requestHash,
             operationType = operationType,
-            money = Money(amount, currency),
+            money = Money(
+                amount = amount,
+                currency = currency,
+            ),
             status = status,
             httpStatus = httpStatus,
             responseSnapshot = responseSnapshot,

@@ -1,4 +1,4 @@
-package com.wannabe.wallet.domain.wallet.model
+package com.wannabe.wallet.domain.wallet.vo
 
 import java.security.MessageDigest
 
