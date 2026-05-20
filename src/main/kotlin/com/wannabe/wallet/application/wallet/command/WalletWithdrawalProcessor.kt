@@ -1,19 +1,20 @@
-package com.wannabe.wallet.application.wallet
+package com.wannabe.wallet.application.wallet.command
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.wannabe.wallet.application.wallet.dto.TransactionResult
 import com.wannabe.wallet.application.wallet.dto.WithdrawalResult
-import com.wannabe.wallet.domain.wallet.IdempotencyRequest
-import com.wannabe.wallet.domain.wallet.IdempotencyStatus
-import com.wannabe.wallet.domain.wallet.OperationType
-import com.wannabe.wallet.domain.wallet.TransactionStatus
-import com.wannabe.wallet.domain.wallet.TransactionType
-import com.wannabe.wallet.domain.wallet.Wallet
-import com.wannabe.wallet.domain.wallet.WalletCommandStore
-import com.wannabe.wallet.domain.wallet.WalletDomainService
-import com.wannabe.wallet.domain.wallet.WalletErrorCode
-import com.wannabe.wallet.domain.wallet.WalletException
-import com.wannabe.wallet.domain.wallet.WalletTransaction
+import com.wannabe.wallet.application.wallet.assembler.WalletAssembler
+import com.wannabe.wallet.domain.wallet.model.IdempotencyRequest
+import com.wannabe.wallet.domain.wallet.model.IdempotencyStatus
+import com.wannabe.wallet.domain.wallet.model.OperationType
+import com.wannabe.wallet.domain.wallet.model.TransactionStatus
+import com.wannabe.wallet.domain.wallet.model.TransactionType
+import com.wannabe.wallet.domain.wallet.model.Wallet
+import com.wannabe.wallet.domain.wallet.port.WalletCommandStore
+import com.wannabe.wallet.domain.wallet.service.WalletDomainService
+import com.wannabe.wallet.domain.wallet.exception.WalletErrorCode
+import com.wannabe.wallet.domain.wallet.exception.WalletException
+import com.wannabe.wallet.domain.wallet.model.WalletTransaction
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -171,6 +172,21 @@ class WalletWithdrawalProcessor(
                 failureMessage = errorCode.message,
             ),
         )
-        return WithdrawalResult(errorCode.status.value(), walletAssembler.toResult(transaction))
+        return WithdrawalResult(errorCode.httpStatus(), walletAssembler.toResult(transaction))
+    }
+
+    private fun WalletErrorCode.httpStatus(): Int {
+        return when (this) {
+            WalletErrorCode.WALLET_NOT_FOUND -> HttpStatus.NOT_FOUND.value()
+            WalletErrorCode.CURRENCY_MISMATCH,
+            WalletErrorCode.INVALID_AMOUNT
+            -> HttpStatus.BAD_REQUEST.value()
+            WalletErrorCode.INSUFFICIENT_BALANCE,
+            WalletErrorCode.IDEMPOTENCY_KEY_CONFLICT,
+            WalletErrorCode.IDEMPOTENCY_REQUEST_IN_PROGRESS,
+            WalletErrorCode.WALLET_BUSY,
+            WalletErrorCode.WALLET_CONCURRENT_MODIFICATION
+            -> HttpStatus.CONFLICT.value()
+        }
     }
 }

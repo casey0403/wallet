@@ -1,4 +1,4 @@
-package com.wannabe.wallet.domain.wallet
+package com.wannabe.wallet.domain.wallet.model
 
 import java.math.BigDecimal
 import java.security.MessageDigest

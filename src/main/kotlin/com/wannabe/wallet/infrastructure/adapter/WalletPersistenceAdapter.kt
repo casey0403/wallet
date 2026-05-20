@@ -1,10 +1,10 @@
 package com.wannabe.wallet.infrastructure.adapter
 
-import com.wannabe.wallet.domain.wallet.IdempotencyRequest
-import com.wannabe.wallet.domain.wallet.Wallet
-import com.wannabe.wallet.domain.wallet.WalletCommandStore
-import com.wannabe.wallet.domain.wallet.WalletQueryStore
-import com.wannabe.wallet.domain.wallet.WalletTransaction
+import com.wannabe.wallet.domain.wallet.model.IdempotencyRequest
+import com.wannabe.wallet.domain.wallet.model.Wallet
+import com.wannabe.wallet.domain.wallet.port.WalletCommandStore
+import com.wannabe.wallet.domain.wallet.port.WalletQueryStore
+import com.wannabe.wallet.domain.wallet.model.WalletTransaction
 import com.wannabe.wallet.infrastructure.jpa.IdempotencyRequestJpaRepository
 import com.wannabe.wallet.infrastructure.jpa.WalletJpaRepository
 import com.wannabe.wallet.infrastructure.jpa.WalletTransactionJpaRepository

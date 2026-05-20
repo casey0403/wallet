@@ -1,6 +1,7 @@
 package com.wannabe.wallet.presentation.controller
 
-import com.wannabe.wallet.domain.wallet.WalletException
+import com.wannabe.wallet.domain.wallet.exception.WalletException
+import com.wannabe.wallet.domain.wallet.exception.WalletErrorCode
 import com.wannabe.wallet.presentation.model.ErrorResponse
 import jakarta.validation.ConstraintViolationException
 import org.springframework.http.HttpStatus
@@ -14,7 +15,7 @@ class GlobalExceptionHandler {
     @ExceptionHandler(WalletException::class)
     fun handleWalletException(exception: WalletException): ResponseEntity<ErrorResponse<Unit>> {
         return ResponseEntity
-            .status(exception.code.status)
+            .status(exception.code.httpStatus())
             .body(
                 ErrorResponse(
                     code = exception.code.name,
@@ -33,5 +34,20 @@ class GlobalExceptionHandler {
                     message = exception.message ?: "Invalid request",
                 ),
             )
+    }
+
+    private fun WalletErrorCode.httpStatus(): HttpStatus {
+        return when (this) {
+            WalletErrorCode.WALLET_NOT_FOUND -> HttpStatus.NOT_FOUND
+            WalletErrorCode.CURRENCY_MISMATCH,
+            WalletErrorCode.INVALID_AMOUNT
+            -> HttpStatus.BAD_REQUEST
+            WalletErrorCode.INSUFFICIENT_BALANCE,
+            WalletErrorCode.IDEMPOTENCY_KEY_CONFLICT,
+            WalletErrorCode.IDEMPOTENCY_REQUEST_IN_PROGRESS,
+            WalletErrorCode.WALLET_BUSY,
+            WalletErrorCode.WALLET_CONCURRENT_MODIFICATION
+            -> HttpStatus.CONFLICT
+        }
     }
 }

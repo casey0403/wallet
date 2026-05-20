@@ -1,5 +1,8 @@
-package com.wannabe.wallet.domain.wallet
+package com.wannabe.wallet.domain.wallet.port
 
+import com.wannabe.wallet.domain.wallet.model.IdempotencyRequest
+import com.wannabe.wallet.domain.wallet.model.Wallet
+import com.wannabe.wallet.domain.wallet.model.WalletTransaction
 import java.math.BigDecimal
 
 interface WalletCommandStore {

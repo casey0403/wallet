@@ -1,4 +1,4 @@
-package com.wannabe.wallet.domain.wallet
+package com.wannabe.wallet.domain.wallet.model
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity

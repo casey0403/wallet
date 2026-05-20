@@ -1,7 +1,7 @@
 package com.wannabe.wallet.presentation.controller
 
-import com.wannabe.wallet.application.wallet.WalletCommandService
-import com.wannabe.wallet.application.wallet.WalletQueryService
+import com.wannabe.wallet.application.wallet.command.WalletCommandService
+import com.wannabe.wallet.application.wallet.query.WalletQueryService
 import com.wannabe.wallet.application.wallet.dto.TransactionResult
 import com.wannabe.wallet.presentation.model.ErrorResponse
 import com.wannabe.wallet.presentation.model.TransactionResponse

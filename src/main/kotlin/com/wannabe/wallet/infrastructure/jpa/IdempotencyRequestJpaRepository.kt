@@ -1,6 +1,6 @@
 package com.wannabe.wallet.infrastructure.jpa
 
-import com.wannabe.wallet.domain.wallet.IdempotencyRequest
+import com.wannabe.wallet.domain.wallet.model.IdempotencyRequest
 import org.springframework.data.jpa.repository.JpaRepository
 import java.util.Optional
 

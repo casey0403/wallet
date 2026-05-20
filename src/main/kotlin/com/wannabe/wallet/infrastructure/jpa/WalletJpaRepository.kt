@@ -1,6 +1,6 @@
 package com.wannabe.wallet.infrastructure.jpa
 
-import com.wannabe.wallet.domain.wallet.Wallet
+import com.wannabe.wallet.domain.wallet.model.Wallet
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query

@@ -1,7 +1,8 @@
 package com.wannabe.wallet.infrastructure.adapter
 
-import com.wannabe.wallet.domain.wallet.WalletErrorCode
-import com.wannabe.wallet.domain.wallet.WalletException
+import com.wannabe.wallet.domain.wallet.exception.WalletErrorCode
+import com.wannabe.wallet.domain.wallet.exception.WalletException
+import com.wannabe.wallet.domain.wallet.port.WalletLock
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.data.redis.core.script.DefaultRedisScript
 import org.springframework.stereotype.Component
@@ -11,7 +12,7 @@ import java.util.UUID
 @Component
 class WalletRedisLock(
     private val redisTemplate: StringRedisTemplate,
-) {
+) : WalletLock {
     private val unlockScript = DefaultRedisScript(
         """
         if redis.call('get', KEYS[1]) == ARGV[1] then
@@ -22,7 +23,7 @@ class WalletRedisLock(
         Long::class.java,
     )
 
-    fun <T> execute(walletId: String, block: () -> T): T {
+    override fun <T> execute(walletId: String, block: () -> T): T {
         val key = "wallet:withdraw:$walletId"
         val token = UUID.randomUUID().toString()
         val acquired = tryLock(key, token, waitTimeout = Duration.ofSeconds(10), leaseTime = Duration.ofSeconds(5))

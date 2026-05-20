@@ -1,9 +1,10 @@
-package com.wannabe.wallet.application.wallet
+package com.wannabe.wallet.application.wallet.query
 
+import com.wannabe.wallet.application.wallet.assembler.WalletAssembler
 import com.wannabe.wallet.application.wallet.dto.TransactionResult
-import com.wannabe.wallet.domain.wallet.WalletErrorCode
-import com.wannabe.wallet.domain.wallet.WalletException
-import com.wannabe.wallet.domain.wallet.WalletQueryStore
+import com.wannabe.wallet.domain.wallet.exception.WalletErrorCode
+import com.wannabe.wallet.domain.wallet.exception.WalletException
+import com.wannabe.wallet.domain.wallet.port.WalletQueryStore
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 

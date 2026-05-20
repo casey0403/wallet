@@ -1,7 +1,7 @@
-package com.wannabe.wallet.application.wallet
+package com.wannabe.wallet.application.wallet.assembler
 
 import com.wannabe.wallet.application.wallet.dto.TransactionResult
-import com.wannabe.wallet.domain.wallet.WalletTransaction
+import com.wannabe.wallet.domain.wallet.model.WalletTransaction
 import org.springframework.stereotype.Component
 
 @Component

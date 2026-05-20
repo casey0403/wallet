@@ -1,8 +1,8 @@
 package com.wannabe.wallet.integration
 
 import com.wannabe.wallet.TestcontainersConfiguration
-import com.wannabe.wallet.domain.wallet.TransactionStatus
-import com.wannabe.wallet.domain.wallet.Wallet
+import com.wannabe.wallet.domain.wallet.model.TransactionStatus
+import com.wannabe.wallet.domain.wallet.model.Wallet
 import com.wannabe.wallet.infrastructure.jpa.IdempotencyRequestJpaRepository
 import com.wannabe.wallet.infrastructure.jpa.WalletJpaRepository
 import com.wannabe.wallet.infrastructure.jpa.WalletTransactionJpaRepository

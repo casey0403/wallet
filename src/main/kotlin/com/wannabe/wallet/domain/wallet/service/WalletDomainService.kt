@@ -1,9 +1,11 @@
-package com.wannabe.wallet.domain.wallet
+package com.wannabe.wallet.domain.wallet.service
 
-import org.springframework.stereotype.Service
+import com.wannabe.wallet.domain.wallet.exception.WalletErrorCode
+import com.wannabe.wallet.domain.wallet.exception.WalletException
+import com.wannabe.wallet.domain.wallet.model.RequestHash
+import com.wannabe.wallet.domain.wallet.model.Wallet
 import java.math.BigDecimal
 
-@Service
 class WalletDomainService {
     fun validateWithdrawalAmount(amount: BigDecimal) {
         if (amount <= BigDecimal.ZERO) {
