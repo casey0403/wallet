@@ -1,0 +1,41 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: wallet-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: wallet
+      MYSQL_USER: wallet
+      MYSQL_PASSWORD: wallet
+      MYSQL_ROOT_PASSWORD: root
+      TZ: Asia/Seoul
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    volumes:
+      - wallet-mysql-data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uwallet", "-pwallet"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7.4
+    container_name: wallet-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - wallet-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  wallet-mysql-data:
+  wallet-redis-data:
