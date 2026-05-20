@@ -1,13 +1,13 @@
 package com.wannabe.wallet.infrastructure.jpa
 
-import com.wannabe.wallet.domain.wallet.model.Wallet
+import com.wannabe.wallet.infrastructure.jpa.entity.WalletJPAEntity
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.math.BigDecimal
 
-interface WalletJpaRepository : JpaRepository<Wallet, String> {
+interface WalletJpaRepository : JpaRepository<WalletJPAEntity, String> {
     @Modifying(flushAutomatically = true)
     @Query(
         value = """

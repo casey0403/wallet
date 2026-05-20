@@ -1,15 +1,16 @@
 package com.wannabe.wallet.infrastructure.adapter
 
 import com.wannabe.wallet.domain.wallet.model.IdempotencyRequest
+import com.wannabe.wallet.domain.wallet.model.Money
 import com.wannabe.wallet.domain.wallet.model.Wallet
+import com.wannabe.wallet.domain.wallet.model.WalletTransaction
 import com.wannabe.wallet.domain.wallet.port.WalletCommandStore
 import com.wannabe.wallet.domain.wallet.port.WalletQueryStore
-import com.wannabe.wallet.domain.wallet.model.WalletTransaction
 import com.wannabe.wallet.infrastructure.jpa.IdempotencyRequestJpaRepository
 import com.wannabe.wallet.infrastructure.jpa.WalletJpaRepository
 import com.wannabe.wallet.infrastructure.jpa.WalletTransactionJpaRepository
+import com.wannabe.wallet.infrastructure.jpa.entity.toJPAEntity
 import org.springframework.stereotype.Component
-import java.math.BigDecimal
 
 @Component
 class WalletPersistenceAdapter(
@@ -18,30 +19,35 @@ class WalletPersistenceAdapter(
     private val walletTransactionJpaRepository: WalletTransactionJpaRepository,
 ) : WalletCommandStore, WalletQueryStore {
     override fun findWallet(walletId: String): Wallet? {
-        return walletJpaRepository.findById(walletId).orElse(null)
+        return walletJpaRepository.findById(walletId).map { it.toDomain() }.orElse(null)
     }
 
     override fun findIdempotencyRequest(walletId: String, idempotencyKey: String): IdempotencyRequest? {
         return idempotencyRequestJpaRepository
             .findByWalletWalletIdAndIdempotencyKey(walletId, idempotencyKey)
+            .map { it.toDomain() }
             .orElse(null)
     }
 
     override fun saveIdempotencyRequest(idempotencyRequest: IdempotencyRequest): IdempotencyRequest {
-        return idempotencyRequestJpaRepository.saveAndFlush(idempotencyRequest)
+        val walletJPAEntity = walletJpaRepository.getReferenceById(idempotencyRequest.wallet.walletId)
+        return idempotencyRequestJpaRepository.saveAndFlush(idempotencyRequest.toJPAEntity(walletJPAEntity)).toDomain()
     }
 
     override fun withdrawIfVersionMatches(
         walletId: String,
         version: Long,
-        amount: BigDecimal,
-        currency: String,
+        money: Money,
     ): Int {
-        return walletJpaRepository.withdrawIfVersionMatches(walletId, version, amount, currency)
+        return walletJpaRepository.withdrawIfVersionMatches(walletId, version, money.amount, money.currency)
     }
 
     override fun saveTransaction(transaction: WalletTransaction): WalletTransaction {
-        return walletTransactionJpaRepository.save(transaction)
+        val walletJPAEntity = walletJpaRepository.getReferenceById(transaction.wallet.walletId)
+        val idempotencyRequestJPAEntity = idempotencyRequestJpaRepository.getReferenceById(transaction.idempotencyRequest.id)
+        return walletTransactionJpaRepository.save(
+            transaction.toJPAEntity(walletJPAEntity, idempotencyRequestJPAEntity),
+        ).toDomain()
     }
 
     override fun exists(walletId: String): Boolean {
@@ -50,5 +56,6 @@ class WalletPersistenceAdapter(
 
     override fun findTransactions(walletId: String): List<WalletTransaction> {
         return walletTransactionJpaRepository.findAllByWalletWalletIdOrderByProcessedAtDescIdDesc(walletId)
+            .map { it.toDomain() }
     }
 }

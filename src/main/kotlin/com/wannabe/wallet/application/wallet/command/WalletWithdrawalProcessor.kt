@@ -1,11 +1,12 @@
 package com.wannabe.wallet.application.wallet.command
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.wannabe.wallet.application.wallet.dto.TransactionResult
-import com.wannabe.wallet.application.wallet.dto.WithdrawalResult
+import com.wannabe.wallet.application.wallet.dto.TransactionDTO
+import com.wannabe.wallet.application.wallet.dto.WithdrawalResultDTO
 import com.wannabe.wallet.application.wallet.assembler.WalletAssembler
 import com.wannabe.wallet.domain.wallet.model.IdempotencyRequest
 import com.wannabe.wallet.domain.wallet.model.IdempotencyStatus
+import com.wannabe.wallet.domain.wallet.model.Money
 import com.wannabe.wallet.domain.wallet.model.OperationType
 import com.wannabe.wallet.domain.wallet.model.TransactionStatus
 import com.wannabe.wallet.domain.wallet.model.TransactionType
@@ -18,7 +19,6 @@ import com.wannabe.wallet.domain.wallet.model.WalletTransaction
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.math.BigDecimal
 import java.time.LocalDateTime
 
 @Service
@@ -29,13 +29,13 @@ class WalletWithdrawalProcessor(
     private val objectMapper: ObjectMapper,
 ) {
     @Transactional
-    fun withdraw(walletId: String, amount: BigDecimal, currency: String, transactionId: String): WithdrawalResult {
+    fun withdraw(walletId: String, money: Money, transactionId: String): WithdrawalResultDTO {
         val wallet = walletCommandStore.findWallet(walletId)
             ?: throw WalletException(WalletErrorCode.WALLET_NOT_FOUND)
 
-        walletDomainService.validateCurrency(wallet, currency)
+        walletDomainService.validateCurrency(wallet, money)
 
-        val requestHash = walletDomainService.withdrawalRequestHash(walletId, amount, currency, transactionId)
+        val requestHash = walletDomainService.withdrawalRequestHash(walletId, money, transactionId)
         val existing = walletCommandStore.findIdempotencyRequest(walletId, transactionId)
 
         if (existing != null) {
@@ -48,18 +48,18 @@ class WalletWithdrawalProcessor(
                 idempotencyKey = transactionId,
                 requestHash = requestHash,
                 operationType = OperationType.WITHDRAWAL,
-                amount = amount,
-                currency = currency,
+                money = money,
                 expiresAt = LocalDateTime.now().plusDays(7),
             ),
         )
 
-        val result = executeFirstWithdrawal(wallet, idempotencyRequest, amount, currency, transactionId)
+        val result = executeFirstWithdrawal(wallet, idempotencyRequest, money, transactionId)
         idempotencyRequest.complete(result.httpStatus, objectMapper.writeValueAsString(result.body))
+        walletCommandStore.saveIdempotencyRequest(idempotencyRequest)
         return result
     }
 
-    private fun IdempotencyRequest.toResult(requestHash: String): WithdrawalResult {
+    private fun IdempotencyRequest.toResult(requestHash: String): WithdrawalResultDTO {
         if (this.requestHash != requestHash) {
             throw WalletException(WalletErrorCode.IDEMPOTENCY_KEY_CONFLICT)
         }
@@ -68,28 +68,26 @@ class WalletWithdrawalProcessor(
             throw WalletException(WalletErrorCode.IDEMPOTENCY_REQUEST_IN_PROGRESS)
         }
 
-        return WithdrawalResult(
+        return WithdrawalResultDTO(
             httpStatus = httpStatus!!,
-            body = objectMapper.readValue(responseSnapshot, TransactionResult::class.java),
+            body = objectMapper.readValue(responseSnapshot, TransactionDTO::class.java),
         )
     }
 
     private fun executeFirstWithdrawal(
         wallet: Wallet,
         idempotencyRequest: IdempotencyRequest,
-        amount: BigDecimal,
-        currency: String,
+        money: Money,
         transactionId: String,
-    ): WithdrawalResult {
+    ): WithdrawalResultDTO {
         val balanceBefore = wallet.balance
         val versionBefore = wallet.version
 
-        if (balanceBefore < amount) {
+        if (balanceBefore < money) {
             return recordFailure(
                 wallet = wallet,
                 idempotencyRequest = idempotencyRequest,
-                amount = amount,
-                currency = currency,
+                money = money,
                 transactionId = transactionId,
                 balance = balanceBefore,
                 version = versionBefore,
@@ -100,14 +98,13 @@ class WalletWithdrawalProcessor(
         val updatedRows = walletCommandStore.withdrawIfVersionMatches(
             walletId = wallet.walletId,
             version = versionBefore,
-            amount = amount,
-            currency = currency,
+            money = money,
         )
 
         if (updatedRows != 1) {
             val latestWallet = walletCommandStore.findWallet(wallet.walletId)
                 ?: throw WalletException(WalletErrorCode.WALLET_NOT_FOUND)
-            val errorCode = if (latestWallet.balance < amount) {
+            val errorCode = if (latestWallet.balance < money) {
                 WalletErrorCode.INSUFFICIENT_BALANCE
             } else {
                 WalletErrorCode.WALLET_CONCURRENT_MODIFICATION
@@ -115,8 +112,7 @@ class WalletWithdrawalProcessor(
             return recordFailure(
                 wallet = latestWallet,
                 idempotencyRequest = idempotencyRequest,
-                amount = amount,
-                currency = currency,
+                money = money,
                 transactionId = transactionId,
                 balance = latestWallet.balance,
                 version = latestWallet.version,
@@ -124,7 +120,7 @@ class WalletWithdrawalProcessor(
             )
         }
 
-        val balanceAfter = balanceBefore - amount
+        val balanceAfter = balanceBefore - money
         val versionAfter = versionBefore + 1
         val transaction = walletCommandStore.saveTransaction(
             WalletTransaction(
@@ -133,8 +129,7 @@ class WalletWithdrawalProcessor(
                 idempotencyRequest = idempotencyRequest,
                 type = TransactionType.WITHDRAWAL,
                 status = TransactionStatus.SUCCESS,
-                amount = amount,
-                currency = currency,
+                money = money,
                 balanceBefore = balanceBefore,
                 balanceAfter = balanceAfter,
                 walletVersionBefore = versionBefore,
@@ -142,19 +137,18 @@ class WalletWithdrawalProcessor(
             ),
         )
 
-        return WithdrawalResult(HttpStatus.OK.value(), walletAssembler.toResult(transaction))
+        return WithdrawalResultDTO(HttpStatus.OK.value(), walletAssembler.toResult(transaction))
     }
 
     private fun recordFailure(
         wallet: Wallet,
         idempotencyRequest: IdempotencyRequest,
-        amount: BigDecimal,
-        currency: String,
+        money: Money,
         transactionId: String,
-        balance: BigDecimal,
+        balance: Money,
         version: Long,
         errorCode: WalletErrorCode,
-    ): WithdrawalResult {
+    ): WithdrawalResultDTO {
         val transaction = walletCommandStore.saveTransaction(
             WalletTransaction(
                 transactionId = transactionId,
@@ -162,8 +156,7 @@ class WalletWithdrawalProcessor(
                 idempotencyRequest = idempotencyRequest,
                 type = TransactionType.WITHDRAWAL,
                 status = TransactionStatus.FAILED,
-                amount = amount,
-                currency = currency,
+                money = money,
                 balanceBefore = balance,
                 balanceAfter = balance,
                 walletVersionBefore = version,
@@ -172,7 +165,7 @@ class WalletWithdrawalProcessor(
                 failureMessage = errorCode.message,
             ),
         )
-        return WithdrawalResult(errorCode.httpStatus(), walletAssembler.toResult(transaction))
+        return WithdrawalResultDTO(errorCode.httpStatus(), walletAssembler.toResult(transaction))
     }
 
     private fun WalletErrorCode.httpStatus(): Int {

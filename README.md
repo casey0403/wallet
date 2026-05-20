@@ -196,12 +196,13 @@ domain
 infrastructure
   adapter
   jpa
+    entity
 ```
 
 - `presentation`: REST API 요청/응답 모델과 컨트롤러
 - `application`: 유스케이스 조합, command/query service, assembler, application DTO
 - `domain`: 월렛 도메인 모델, 도메인 서비스, exception, port
-- `infrastructure`: JPA repository, Redis lock adapter, persistence adapter
+- `infrastructure`: JPA repository, `*JPAEntity`, Redis lock adapter, persistence adapter
 
 의존성 방향은 `presentation -> application -> domain <- infrastructure`를 따릅니다. application은 Redis나 JPA 구현체를 직접 참조하지 않고 `WalletLock`, `WalletCommandStore`, `WalletQueryStore` 포트에 의존합니다.
 

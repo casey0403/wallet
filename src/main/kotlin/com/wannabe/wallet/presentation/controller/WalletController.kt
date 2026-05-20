@@ -2,7 +2,7 @@ package com.wannabe.wallet.presentation.controller
 
 import com.wannabe.wallet.application.wallet.command.WalletCommandService
 import com.wannabe.wallet.application.wallet.query.WalletQueryService
-import com.wannabe.wallet.application.wallet.dto.TransactionResult
+import com.wannabe.wallet.application.wallet.dto.TransactionDTO
 import com.wannabe.wallet.presentation.model.ErrorResponse
 import com.wannabe.wallet.presentation.model.TransactionResponse
 import com.wannabe.wallet.presentation.model.TransactionsResponse
@@ -40,7 +40,7 @@ class WalletController(
         return TransactionsResponse(walletQueryService.getTransactions(walletId).map { it.toResponse() })
     }
 
-    private fun TransactionResult.toResponse(): TransactionResponse {
+    private fun TransactionDTO.toResponse(): TransactionResponse {
         return TransactionResponse(
             transactionId = transactionId,
             walletId = walletId,

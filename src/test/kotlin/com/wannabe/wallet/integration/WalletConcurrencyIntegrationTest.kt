@@ -2,10 +2,10 @@ package com.wannabe.wallet.integration
 
 import com.wannabe.wallet.TestcontainersConfiguration
 import com.wannabe.wallet.domain.wallet.model.TransactionStatus
-import com.wannabe.wallet.domain.wallet.model.Wallet
 import com.wannabe.wallet.infrastructure.jpa.IdempotencyRequestJpaRepository
 import com.wannabe.wallet.infrastructure.jpa.WalletJpaRepository
 import com.wannabe.wallet.infrastructure.jpa.WalletTransactionJpaRepository
+import com.wannabe.wallet.infrastructure.jpa.entity.WalletJPAEntity
 import com.wannabe.wallet.presentation.model.WithdrawalRequest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -41,7 +41,7 @@ class WalletConcurrencyIntegrationTest @Autowired constructor(
         walletTransactionRepository.deleteAll()
         idempotencyRequestRepository.deleteAll()
         walletRepository.deleteAll()
-        walletRepository.save(Wallet(walletId = walletId, balance = BigDecimal("500000.0000")))
+        walletRepository.save(WalletJPAEntity(walletId = walletId, balance = BigDecimal("500000.0000")))
     }
 
     @Test

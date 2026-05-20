@@ -3,7 +3,7 @@ package com.wannabe.wallet.application.wallet.dto
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
-data class TransactionResult(
+data class TransactionDTO(
     val transactionId: String,
     val walletId: String,
     val type: String,
@@ -17,7 +17,7 @@ data class TransactionResult(
     val failureMessage: String? = null,
 )
 
-data class WithdrawalResult(
+data class WithdrawalResultDTO(
     val httpStatus: Int,
-    val body: TransactionResult,
+    val body: TransactionDTO,
 )
