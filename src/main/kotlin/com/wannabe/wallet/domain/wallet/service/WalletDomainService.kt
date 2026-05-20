@@ -2,29 +2,28 @@ package com.wannabe.wallet.domain.wallet.service
 
 import com.wannabe.wallet.domain.wallet.exception.WalletErrorCode
 import com.wannabe.wallet.domain.wallet.exception.WalletException
+import com.wannabe.wallet.domain.wallet.model.Money
 import com.wannabe.wallet.domain.wallet.model.RequestHash
 import com.wannabe.wallet.domain.wallet.model.Wallet
-import java.math.BigDecimal
 
 class WalletDomainService {
-    fun validateWithdrawalAmount(amount: BigDecimal) {
-        if (amount <= BigDecimal.ZERO) {
+    fun validateWithdrawalAmount(money: Money) {
+        if (!money.isPositive()) {
             throw WalletException(WalletErrorCode.INVALID_AMOUNT)
         }
     }
 
-    fun validateCurrency(wallet: Wallet, currency: String) {
-        if (wallet.currency != currency) {
+    fun validateCurrency(wallet: Wallet, money: Money) {
+        if (wallet.currency != money.currency) {
             throw WalletException(WalletErrorCode.CURRENCY_MISMATCH)
         }
     }
 
     fun withdrawalRequestHash(
         walletId: String,
-        amount: BigDecimal,
-        currency: String,
+        money: Money,
         transactionId: String,
     ): String {
-        return RequestHash.withdrawal(walletId, amount, currency, transactionId)
+        return RequestHash.withdrawal(walletId, money, transactionId)
     }
 }

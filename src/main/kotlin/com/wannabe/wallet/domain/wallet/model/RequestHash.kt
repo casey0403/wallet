@@ -1,15 +1,14 @@
 package com.wannabe.wallet.domain.wallet.model
 
-import java.math.BigDecimal
 import java.security.MessageDigest
 
 object RequestHash {
-    fun withdrawal(walletId: String, amount: BigDecimal, currency: String, transactionId: String): String {
+    fun withdrawal(walletId: String, money: Money, transactionId: String): String {
         val normalized = listOf(
             walletId,
             "WITHDRAWAL",
-            amount.stripTrailingZeros().toPlainString(),
-            currency,
+            money.amount.stripTrailingZeros().toPlainString(),
+            money.currency,
             transactionId,
         ).joinToString("|")
         val digest = MessageDigest.getInstance("SHA-256").digest(normalized.toByteArray(Charsets.UTF_8))
