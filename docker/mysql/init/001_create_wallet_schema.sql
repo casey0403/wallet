@@ -35,7 +35,7 @@ CREATE TABLE idempotency_requests (
     currency VARCHAR(3) NOT NULL,
     status VARCHAR(20) NOT NULL,
     http_status INT NULL,
-    response_snapshot JSON NULL,
+    response_snapshot LONGTEXT NULL,
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     completed_at DATETIME(6) NULL,
     expires_at DATETIME(6) NOT NULL,

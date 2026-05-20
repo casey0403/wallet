@@ -1,6 +1,5 @@
 package com.wannabe.wallet.domain.wallet
 
-import com.fasterxml.jackson.databind.JsonNode
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -13,8 +12,6 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
-import org.hibernate.annotations.JdbcTypeCode
-import org.hibernate.type.SqlTypes
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -59,9 +56,8 @@ class IdempotencyRequest(
     @Column(name = "http_status")
     var httpStatus: Int? = null,
 
-    @Column(name = "response_snapshot", columnDefinition = "json")
-    @JdbcTypeCode(SqlTypes.JSON)
-    var responseSnapshot: JsonNode? = null,
+    @Column(name = "response_snapshot", columnDefinition = "LONGTEXT")
+    var responseSnapshot: String? = null,
 
     @Column(name = "created_at", nullable = false, updatable = false, insertable = false)
     val createdAt: LocalDateTime? = null,
@@ -72,7 +68,7 @@ class IdempotencyRequest(
     @Column(name = "expires_at", nullable = false)
     val expiresAt: LocalDateTime,
 ) {
-    fun complete(httpStatus: Int, responseSnapshot: JsonNode) {
+    fun complete(httpStatus: Int, responseSnapshot: String) {
         this.status = IdempotencyStatus.COMPLETED
         this.httpStatus = httpStatus
         this.responseSnapshot = responseSnapshot

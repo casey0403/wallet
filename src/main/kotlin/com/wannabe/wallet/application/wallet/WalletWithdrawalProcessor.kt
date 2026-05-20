@@ -54,7 +54,7 @@ class WalletWithdrawalProcessor(
         )
 
         val result = executeFirstWithdrawal(wallet, idempotencyRequest, amount, currency, transactionId)
-        idempotencyRequest.complete(result.httpStatus, objectMapper.valueToTree(result.body))
+        idempotencyRequest.complete(result.httpStatus, objectMapper.writeValueAsString(result.body))
         return result
     }
 
@@ -69,7 +69,7 @@ class WalletWithdrawalProcessor(
 
         return WithdrawalResult(
             httpStatus = httpStatus!!,
-            body = objectMapper.treeToValue(responseSnapshot, TransactionResult::class.java),
+            body = objectMapper.readValue(responseSnapshot, TransactionResult::class.java),
         )
     }
 

@@ -50,4 +50,8 @@ allOpen {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    testLogging {
+        events("passed", "failed", "standardOut", "standardError")
+        showStandardStreams = true
+    }
 }
