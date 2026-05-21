@@ -118,39 +118,34 @@ POST /api/v1/wallets/{walletId}/withdrawals
 
 ```json
 {
-  "transactionId": "TXN-001",
-  "walletId": "sample-wallet",
-  "type": "WITHDRAWAL",
-  "status": "SUCCESS",
-  "withdrawalAmount": 10000,
-  "currency": "KRW",
-  "balance": 90000.0000,
-  "version": 1,
-  "withdrawalDate": "2026-05-21T01:30:36.117000"
+  "code": "SUCCESS",
+  "status": 200,
+  "data": {
+    "transactionId": "TXN-001",
+    "walletId": "sample-wallet",
+    "type": "WITHDRAWAL",
+    "status": "SUCCESS",
+    "withdrawalAmount": 10000,
+    "currency": "KRW",
+    "balance": 90000.0000,
+    "version": 1,
+    "withdrawalDate": "2026-05-21T01:30:36.117000"
+  }
 }
 ```
 
-실패 응답은 `code`, `message`, `data` 형식을 사용합니다.
+모든 응답은 `code`, `status`, `data` 형식을 사용합니다. 성공 시 `code`는 `SUCCESS`, 실패 시 `code`는 `FAILED`입니다.
 실패 요청은 월렛 잔액을 변경하지 않으므로 `wallet_transactions`에는 저장하지 않습니다. 동일 실패 요청의 멱등 응답은 `idempotency_requests.response_snapshot`에 원본 응답 문자열을 보존해 재사용합니다.
 
 잔액 부족 `409 Conflict`:
 
 ```json
 {
-  "code": "INSUFFICIENT_BALANCE",
-  "message": "Insufficient wallet balance",
+  "code": "FAILED",
+  "status": 409,
   "data": {
-    "transactionId": "TXN-002",
-    "walletId": "sample-wallet",
-    "type": "WITHDRAWAL",
-    "status": "FAILED",
-    "withdrawalAmount": 1000000,
-    "currency": "KRW",
-    "balance": 90000.0000,
-    "version": 1,
-    "withdrawalDate": "2026-05-21T01:30:36.117000",
-    "failureCode": "INSUFFICIENT_BALANCE",
-    "failureMessage": "Insufficient wallet balance"
+    "errorCode": "INSUFFICIENT_BALANCE",
+    "message": "Insufficient wallet balance"
   }
 }
 ```
@@ -165,19 +160,23 @@ GET /api/v1/wallets/{walletId}/transactions
 
 ```json
 {
-  "transactions": [
-    {
-      "transactionId": "TXN-001",
-      "walletId": "sample-wallet",
-      "type": "WITHDRAWAL",
-      "status": "SUCCESS",
-      "withdrawalAmount": 10000,
-      "currency": "KRW",
-      "balance": 90000.0000,
-      "version": 1,
-      "withdrawalDate": "2026-05-21T01:30:36.117000"
-    }
-  ]
+  "code": "SUCCESS",
+  "status": 200,
+  "data": {
+    "transactions": [
+      {
+        "transactionId": "TXN-001",
+        "walletId": "sample-wallet",
+        "type": "WITHDRAWAL",
+        "status": "SUCCESS",
+        "withdrawalAmount": 10000,
+        "currency": "KRW",
+        "balance": 90000.0000,
+        "version": 1,
+        "withdrawalDate": "2026-05-21T01:30:36.117000"
+      }
+    ]
+  }
 }
 ```
 
@@ -212,11 +211,10 @@ presentation
     request
     response
 application
+  common
   wallet
     assembler
-    command
     dto
-    query
 domain
   wallet
     enums
@@ -233,22 +231,21 @@ infrastructure
 ```
 
 - `presentation`: REST API 요청/응답 모델과 컨트롤러
-- `application`: 유스케이스 조합, command/query service, assembler, application DTO
+- `application`: 유스케이스 interface와 `@ApplicationService` 구현체, assembler, application DTO
 - `domain`: 월렛 도메인 모델, VO, enum, error code, exception, 도메인 서비스, port
-- `infrastructure`: JPA repository, `*JPAEntity`, Redis lock adapter, persistence adapter
+- `infrastructure`: JPA repository, `*JPAEntity`, Redis lock adapter, query/command adapter
 
-의존성 방향은 `presentation -> application -> domain <- infrastructure`를 따릅니다. application은 Redis나 JPA 구현체를 직접 참조하지 않고 `WalletLock`, `WalletCommandStore`, `WalletQueryStore` 포트에 의존합니다.
+의존성 방향은 `presentation -> application -> domain <- infrastructure`를 따릅니다. application은 Redis나 JPA 구현체를 직접 참조하지 않고 `WalletLock` 포트와 도메인 서비스를 사용합니다. `WalletDomainService`는 `WalletQueryStore`, `WalletCommandStore` 포트를 통해 저장소와 협력하고, infrastructure의 `WalletQueryAdapter`, `WalletCommandAdapter`가 각 포트를 구현합니다.
 
 ### 동시성 제어
 
 출금은 다음 순서로 처리합니다.
 
 1. Redis 분산락을 `wallet:withdraw:{walletId}` 단위로 획득합니다.
-2. DB 트랜잭션 안에서 멱등성 요청을 확인하거나 생성합니다.
-3. 월렛의 현재 `balance`, `version`, `wallet_status`를 기준으로 조건부 atomic update를 수행합니다.
-4. 성공 또는 실패 거래내역을 저장합니다.
-5. 멱등성 응답 snapshot을 저장합니다.
-6. Redis lock을 Lua script로 안전하게 해제합니다.
+2. 기존 멱등성 요청은 메인 write 트랜잭션 밖에서 짧은 read-only 조회로 확인합니다.
+3. 최초 요청일 때만 짧은 write 트랜잭션을 시작하고, 트랜잭션 안에서 멱등성 요청 재확인 및 생성, 월렛 조건부 atomic update, 성공 거래내역 저장, 응답 snapshot 저장을 하나의 원자 단위로 처리합니다.
+4. 실패 출금은 잔액 변동이 없으므로 거래내역에는 저장하지 않고 멱등성 응답 snapshot만 저장합니다.
+5. Redis lock을 Lua script로 안전하게 해제합니다.
 
 출금 API의 주요 흐름은 다음과 같습니다.
 
@@ -257,65 +254,75 @@ sequenceDiagram
     autonumber
     actor Client
     participant Controller as WalletController
-    participant CommandService as WalletCommandService
+    participant Assembler as "WalletWithdrawalAssemblerImpl(@ApplicationService)"
     participant Lock as "WalletLock(Redis)"
-    participant Processor as WalletWithdrawalProcessor
-    participant Store as WalletCommandStore
+    participant DomainService as "WalletDomainService(@DomainService)"
+    participant QueryStore as WalletQueryStore
+    participant CommandStore as WalletCommandStore
     participant DB as MySQL
 
     Client->>Controller: POST /api/v1/wallets/{walletId}/withdrawals
-    Controller->>CommandService: withdraw(walletId, amount, currency, transactionId)
-    CommandService->>CommandService: Money 생성 및 출금 금액 검증
-    CommandService->>Lock: wallet 단위 Redis lock 획득
+    Controller->>Assembler: withdraw(walletId, amount, currency, transactionId)
+    Assembler->>Assembler: Money 생성 및 출금 금액 검증
+    Assembler->>Lock: wallet 단위 Redis lock 획득
 
     alt lock 획득 실패
-        Lock-->>CommandService: WALLET_BUSY
-        CommandService-->>Controller: 실패
-        Controller-->>Client: 409 ErrorResponse
+        Lock-->>Assembler: WALLET_BUSY
+        Assembler-->>Controller: 실패
+        Controller-->>Client: 409 CommonResponse
     else lock 획득 성공
-        Lock->>Processor: 출금 처리 실행
-        Processor->>Store: wallet 조회
-        Store->>DB: SELECT wallet
-        DB-->>Store: wallet
-        Store-->>Processor: wallet
+        Lock->>Assembler: 출금 처리 실행
 
-        Processor->>Store: idempotency request 조회
-        Store->>DB: SELECT by walletId + transactionId
-        DB-->>Store: 기존 요청 또는 없음
+        Note over Assembler,DB: tx1 - write 트랜잭션 밖의 짧은 read-only 멱등성 조회
+        Assembler->>DomainService: findIdempotencyRequest(walletId, transactionId)
+        DomainService->>QueryStore: idempotency request 조회
+        QueryStore->>DB: SELECT by walletId + transactionId
+        DB-->>QueryStore: 기존 요청 또는 없음
 
         alt 동일 transactionId의 완료 요청 존재
-            Store-->>Processor: responseSnapshot
-            Processor-->>Lock: 이전 응답 반환
-            Lock-->>CommandService: 이전 응답
-            CommandService-->>Controller: 이전 응답
+            QueryStore-->>DomainService: responseSnapshot
+            DomainService-->>Assembler: 기존 요청
+            Assembler-->>Lock: 이전 응답 반환
+            Lock-->>Assembler: 이전 응답
+            Assembler-->>Controller: 이전 응답
             Controller-->>Client: 동일 응답
         else 최초 요청
-            Processor->>Store: idempotency request PROCESSING 저장
-            Store->>DB: INSERT idempotency_requests
+            Note over Assembler,DB: tx2 - TransactionTemplate write 원자 구간
+            Assembler->>DomainService: findIdempotencyRequest 재조회
+            DomainService->>QueryStore: idempotency request 조회
+            QueryStore->>DB: SELECT by walletId + transactionId
+            Assembler->>DomainService: startWithdrawal(walletId, money, transactionId, requestHash)
+            DomainService->>QueryStore: wallet 조회 및 통화 검증
+            QueryStore->>DB: SELECT wallet
+            DomainService->>CommandStore: idempotency request PROCESSING 저장
+            CommandStore->>DB: INSERT idempotency_requests
 
-            Processor->>Store: 조건부 atomic update
-            Store->>DB: UPDATE wallets SET balance = balance - amount, version = version + 1 WHERE id/version/balance/currency/status 조건
+            Assembler->>DomainService: withdraw(wallet, idempotencyRequest, money, transactionId)
+            DomainService->>CommandStore: 조건부 atomic update
+            CommandStore->>DB: UPDATE wallets SET balance = balance - amount, version = version + 1 WHERE id/version/balance/currency/status 조건
 
             alt update 성공
-                DB-->>Store: updatedRows = 1
-                Processor->>Store: 성공 거래내역 저장
-                Store->>DB: INSERT wallet_transactions SUCCESS
-                Processor->>Store: responseSnapshot 저장
-                Store->>DB: UPDATE idempotency_requests COMPLETED
-                Processor-->>Lock: 성공 응답
-                Lock-->>CommandService: 성공 응답
-                CommandService-->>Controller: 성공 응답
-                Controller-->>Client: 200 TransactionResponse
+                DB-->>CommandStore: updatedRows = 1
+                DomainService->>CommandStore: 성공 거래내역 저장
+                CommandStore->>DB: INSERT wallet_transactions SUCCESS
+                Assembler->>DomainService: completeIdempotencyRequest(...)
+                DomainService->>CommandStore: responseSnapshot 저장
+                CommandStore->>DB: UPDATE idempotency_requests COMPLETED
+                Assembler-->>Lock: 성공 응답
+                Lock-->>Assembler: 성공 응답
+                Assembler-->>Controller: 성공 응답
+                Controller-->>Client: 200 CommonResponse
             else update 실패
-                DB-->>Store: updatedRows = 0
-                Processor->>Store: 최신 wallet 재조회
-                Store->>DB: SELECT wallet
-                Processor->>Store: responseSnapshot 저장
-                Store->>DB: UPDATE idempotency_requests COMPLETED
-                Processor-->>Lock: 실패 응답
-                Lock-->>CommandService: 실패 응답
-                CommandService-->>Controller: 실패 응답
-                Controller-->>Client: 409 ErrorResponse
+                DB-->>CommandStore: updatedRows = 0
+                DomainService->>QueryStore: 최신 wallet 재조회
+                QueryStore->>DB: SELECT wallet
+                Assembler->>DomainService: completeIdempotencyRequest(...)
+                DomainService->>CommandStore: responseSnapshot 저장
+                CommandStore->>DB: UPDATE idempotency_requests COMPLETED
+                Assembler-->>Lock: 실패 응답
+                Lock-->>Assembler: 실패 응답
+                Assembler-->>Controller: 실패 응답
+                Controller-->>Client: 409 CommonResponse
             end
         end
 
@@ -354,6 +361,26 @@ Redis lock은 같은 wallet의 요청을 짧게 직렬화해서 DB 충돌을 줄
 - 요청 파라미터는 SHA-256 hash로 저장해 중복 키의 요청 내용 불일치를 검출합니다.
 
 멱등성 응답 snapshot은 `LONGTEXT`로 저장합니다. MySQL `JSON` 타입은 숫자 값을 정규화할 수 있어 `10000.0000`이 `10000.0`처럼 저장될 수 있습니다. 이 경우 재요청 시 byte-level 응답 동일성이 깨질 수 있으므로, 직렬화된 원본 응답 문자열을 그대로 보존하기 위해 `LONGTEXT`를 선택했습니다.
+
+### 우려사항 및 향후 대책
+
+현재 구현은 과제 요구사항인 "동일한 성공 또는 실패 응답 반환"을 명확히 보장하기 위해 `idempotency_requests.response_snapshot`에 응답 JSON 문자열을 저장합니다. 이 방식은 구현이 단순하고 재요청 시 첫 응답을 그대로 replay할 수 있다는 장점이 있습니다. 특히 실패 출금은 잔액 변동이 없으므로 `wallet_transactions`에 저장하지 않는데, 이때 실패 응답을 동일하게 재현하기 위한 근거로 snapshot을 사용합니다.
+
+다만 운영 금융/결제 시스템에서 모든 응답을 장기간 문자열 snapshot으로만 보관하는 것은 한계가 있습니다.
+
+- 응답 스키마가 변경되면 과거 snapshot과 현재 API 응답 형식이 달라질 수 있습니다.
+- 개인정보나 민감 정보가 응답에 포함될 경우 snapshot 저장 범위, 마스킹, 암호화, 보관 기간 정책이 필요합니다.
+- `LONGTEXT` snapshot은 조회/검색/통계에 적합하지 않으므로 운영 분석에는 구조화된 컬럼이 더 유리합니다.
+- 성공 거래는 이미 생성된 거래 리소스를 기준으로 재구성할 수 있으므로 snapshot만이 유일한 선택지는 아닙니다.
+
+향후 운영 고도화 시에는 다음 구조를 고려합니다.
+
+- 성공 요청: `idempotency_requests`에는 `resource_type`, `resource_id`, `http_status`를 저장하고, 재요청 시 `wallet_transactions`를 조회해 응답을 재구성합니다.
+- 실패 요청: `failure_code`, `failure_message`, `failed_balance`, `failed_wallet_version` 등 필요한 실패 metadata를 구조화해서 저장합니다.
+- 응답 snapshot: 외부 계약상 byte-level 동일 응답이 꼭 필요한 경우에만 보조 컬럼으로 유지하거나, 짧은 TTL을 두고 만료시킵니다.
+- 보안/운영: snapshot 또는 metadata에 암호화, 마스킹, 보관 기간, 삭제 배치, 모니터링을 적용합니다.
+
+즉, 현재 snapshot 방식은 과제의 멱등성 검증과 응답 동일성 보장에 적합한 선택이며, 실제 운영에서는 성공/실패 결과를 구조화해 저장하고 필요한 경우에만 snapshot을 병행하는 방향으로 확장할 수 있습니다.
 
 ## 테스트
 

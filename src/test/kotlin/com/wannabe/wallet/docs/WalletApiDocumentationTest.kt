@@ -92,7 +92,12 @@ class WalletApiDocumentationTest @Autowired constructor(
                                     .type(JsonFieldType.STRING)
                                     .description("ISO 4217 통화 코드"),
                             )
-                            .responseFields(transactionResponseFields())
+                            .responseFields(
+                                *commonSuccessResponseFields(
+                                    dataDescription = "출금 처리 결과",
+                                    dataFields = transactionResponseFields("data."),
+                                ).toTypedArray(),
+                            )
                             .build(),
                     ),
                 ),
@@ -132,16 +137,40 @@ class WalletApiDocumentationTest @Autowired constructor(
                                 parameterWithName("walletId").description("월렛 ID"),
                             )
                             .responseFields(
-                                fieldWithPath("transactions")
+                                fieldWithPath("code")
+                                    .type(JsonFieldType.STRING)
+                                    .description("공통 응답 코드. 성공 시 SUCCESS"),
+                                fieldWithPath("status")
+                                    .type(JsonFieldType.NUMBER)
+                                    .description("HTTP status code"),
+                                fieldWithPath("data")
+                                    .type(JsonFieldType.OBJECT)
+                                    .description("응답 데이터"),
+                                fieldWithPath("data.transactions")
                                     .type(JsonFieldType.ARRAY)
                                     .description("거래내역 목록"),
-                                *transactionResponseFields("transactions[].").toTypedArray(),
+                                *transactionResponseFields("data.transactions[].").toTypedArray(),
                             )
                             .build(),
                     ),
                 ),
             )
     }
+
+    private fun commonSuccessResponseFields(
+        dataDescription: String,
+        dataFields: List<org.springframework.restdocs.payload.FieldDescriptor>,
+    ) = listOf(
+        fieldWithPath("code")
+            .type(JsonFieldType.STRING)
+            .description("공통 응답 코드. 성공 시 SUCCESS"),
+        fieldWithPath("status")
+            .type(JsonFieldType.NUMBER)
+            .description("HTTP status code"),
+        fieldWithPath("data")
+            .type(JsonFieldType.OBJECT)
+            .description(dataDescription),
+    ) + dataFields
 
     private fun transactionResponseFields(prefix: String = "") = listOf(
         fieldWithPath("${prefix}transactionId")

@@ -1,10 +1,11 @@
 package com.wannabe.wallet.presentation.controller
 
-import com.wannabe.wallet.application.wallet.command.WalletCommandService
-import com.wannabe.wallet.application.wallet.query.WalletQueryService
+import com.wannabe.wallet.application.wallet.assembler.WalletTransactionHistoryAssembler
+import com.wannabe.wallet.application.wallet.assembler.WalletWithdrawalAssembler
+import com.wannabe.wallet.presentation.model.response.CommonResponse
 import com.wannabe.wallet.presentation.model.response.TransactionsResponse
 import com.wannabe.wallet.presentation.model.request.WithdrawalRequest
-import com.wannabe.wallet.presentation.model.response.toErrorResponse
+import com.wannabe.wallet.presentation.model.response.toErrorDetailResponse
 import com.wannabe.wallet.presentation.model.response.toResponse
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
@@ -18,15 +19,15 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/v1/wallets")
 class WalletController(
-    private val walletCommandService: WalletCommandService,
-    private val walletQueryService: WalletQueryService,
+    private val walletWithdrawalAssembler: WalletWithdrawalAssembler,
+    private val walletTransactionHistoryAssembler: WalletTransactionHistoryAssembler,
 ) {
     @PostMapping("/{walletId}/withdrawals")
     fun withdraw(
         @PathVariable walletId: String,
         @Valid @RequestBody request: WithdrawalRequest,
-    ): ResponseEntity<Any> {
-        val response = walletCommandService.withdraw(
+    ): ResponseEntity<CommonResponse<*>> {
+        val response = walletWithdrawalAssembler.withdraw(
             walletId = walletId,
             amount = request.amount,
             currency = request.currency,
@@ -34,13 +35,27 @@ class WalletController(
         )
         val body = response.body.toResponse()
         if (response.httpStatus in 200..299) {
-            return ResponseEntity.status(response.httpStatus).body(body)
+            return ResponseEntity
+                .status(response.httpStatus)
+                .body(CommonResponse.success(data = body))
         }
-        return ResponseEntity.status(response.httpStatus).body(body.toErrorResponse())
+        return ResponseEntity
+            .status(response.httpStatus)
+            .body(
+                CommonResponse.failed(
+                    status = response.httpStatus,
+                    data = response.body.toErrorDetailResponse(),
+                ),
+            )
     }
 
     @GetMapping("/{walletId}/transactions")
-    fun getTransactions(@PathVariable walletId: String): TransactionsResponse {
-        return TransactionsResponse(walletQueryService.getTransactions(walletId).map { it.toResponse() })
+    fun getTransactions(@PathVariable walletId: String): CommonResponse<TransactionsResponse> {
+        val response = TransactionsResponse(
+            transactions = walletTransactionHistoryAssembler.getTransactions(walletId).map { it.toResponse() },
+        )
+        return CommonResponse.success(
+            data = response,
+        )
     }
 }

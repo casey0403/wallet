@@ -2,7 +2,8 @@ package com.wannabe.wallet.presentation.controller
 
 import com.wannabe.wallet.domain.wallet.exception.WalletException
 import com.wannabe.wallet.domain.wallet.error.WalletErrorCode
-import com.wannabe.wallet.presentation.model.response.ErrorResponse
+import com.wannabe.wallet.presentation.model.response.CommonResponse
+import com.wannabe.wallet.presentation.model.response.ErrorDetailResponse
 import jakarta.validation.ConstraintViolationException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -13,25 +14,32 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 @RestControllerAdvice
 class GlobalExceptionHandler {
     @ExceptionHandler(WalletException::class)
-    fun handleWalletException(exception: WalletException): ResponseEntity<ErrorResponse<Unit>> {
+    fun handleWalletException(exception: WalletException): ResponseEntity<CommonResponse<ErrorDetailResponse>> {
+        val status = exception.code.httpStatus()
         return ResponseEntity
-            .status(exception.code.httpStatus())
+            .status(status)
             .body(
-                ErrorResponse(
-                    code = exception.code.name,
-                    message = exception.message,
+                CommonResponse.failed(
+                    status = status.value(),
+                    data = ErrorDetailResponse(
+                        errorCode = exception.code.name,
+                        message = exception.message,
+                    ),
                 ),
             )
     }
 
     @ExceptionHandler(MethodArgumentNotValidException::class, ConstraintViolationException::class)
-    fun handleValidationException(exception: Exception): ResponseEntity<ErrorResponse<Unit>> {
+    fun handleValidationException(exception: Exception): ResponseEntity<CommonResponse<ErrorDetailResponse>> {
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .body(
-                ErrorResponse(
-                    code = "INVALID_REQUEST",
-                    message = exception.message ?: "Invalid request",
+                CommonResponse.failed(
+                    status = HttpStatus.BAD_REQUEST.value(),
+                    data = ErrorDetailResponse(
+                        errorCode = "INVALID_REQUEST",
+                        message = exception.message ?: "Invalid request",
+                    ),
                 ),
             )
     }

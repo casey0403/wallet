@@ -18,10 +18,9 @@ fun TransactionDTO.toResponse(): TransactionResponse {
     )
 }
 
-fun TransactionResponse.toErrorResponse(): ErrorResponse<TransactionResponse> {
-    return ErrorResponse(
-        code = failureCode ?: "WITHDRAWAL_FAILED",
+fun TransactionDTO.toErrorDetailResponse(): ErrorDetailResponse {
+    return ErrorDetailResponse(
+        errorCode = failureCode ?: "WITHDRAWAL_FAILED",
         message = failureMessage ?: "Withdrawal failed",
-        data = this,
     )
 }
