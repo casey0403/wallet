@@ -11,7 +11,6 @@ import com.wannabe.wallet.domain.wallet.port.WalletLockKey
 import com.wannabe.wallet.domain.wallet.service.WalletDomainService
 import com.wannabe.wallet.domain.wallet.vo.Money
 import org.springframework.transaction.support.TransactionTemplate
-import java.math.BigDecimal
 
 @ApplicationService
 class WalletWithdrawalAssemblerImpl(
@@ -22,12 +21,12 @@ class WalletWithdrawalAssemblerImpl(
 ) : WalletWithdrawalAssembler {
     override fun withdraw(
         walletId: String,
-        amount: BigDecimal,
+        amount: Long,
         currency: String,
         transactionId: String,
     ): WithdrawalResultDTO {
         val money = Money(
-            amount = amount,
+            amount = amount.toBigDecimal(),
             currency = currency,
         )
         walletDomainService.validateWithdrawalAmount(money)

@@ -25,7 +25,6 @@ import org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get
 import org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import java.math.BigDecimal
 
 @Import(TestcontainersConfiguration::class)
 @AutoConfigureMockMvc
@@ -48,7 +47,7 @@ class WalletApiDocumentationTest @Autowired constructor(
         walletRepository.save(
             WalletJPAEntity(
                 walletId = walletId,
-                balance = BigDecimal("100000.0000"),
+                balance = 100000.toBigDecimal(),
             ),
         )
     }
@@ -56,9 +55,8 @@ class WalletApiDocumentationTest @Autowired constructor(
     @Test
     fun `document wallet withdrawal API`() {
         val request = WithdrawalRequest(
-            amount = BigDecimal("10000.0000"),
+            amount = 10000L,
             transactionId = "DOCS-TXN-001",
-            currency = "KRW",
         )
 
         mockMvc.perform(
@@ -107,9 +105,8 @@ class WalletApiDocumentationTest @Autowired constructor(
     @Test
     fun `document wallet transaction history API`() {
         val request = WithdrawalRequest(
-            amount = BigDecimal("10000.0000"),
+            amount = 10000L,
             transactionId = "DOCS-TXN-002",
-            currency = "KRW",
         )
 
         mockMvc.perform(

@@ -1,17 +1,15 @@
 package com.wannabe.wallet.presentation.model.request
 
-import jakarta.validation.constraints.DecimalMin
+import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.Pattern
-import java.math.BigDecimal
 
 data class WithdrawalRequest(
-    @field:DecimalMin(value = "0.0001")
-    val amount: BigDecimal,
+    @field:Min(value = 1)
+    val amount: Long,
 
     @field:NotBlank
     val transactionId: String,
 
-    @field:Pattern(regexp = "^[A-Z]{3}$")
+    // TODO: 다통화 지원 시 currency 필드 추가
     val currency: String = "KRW",
 )
