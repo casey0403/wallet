@@ -71,6 +71,31 @@ ON DUPLICATE KEY UPDATE balance = VALUES(balance), currency = VALUES(currency), 
 
 ## API
 
+API 문서는 Spring REST Docs 기반 테스트로 생성합니다. 비즈니스 컨트롤러에는 OpenAPI/Swagger annotation을 두지 않고, `src/test`의 문서화 테스트가 실제 API를 호출하며 request/response snippet과 OpenAPI 3 스펙을 생성합니다.
+
+문서 생성:
+
+```bash
+./gradlew test --tests com.wannabe.wallet.docs.WalletApiDocumentationTest --rerun-tasks openapi3
+```
+
+생성 결과:
+
+```text
+build/generated-snippets/
+build/api-spec/openapi3.yaml
+```
+
+애플리케이션 실행 후 Swagger UI로 확인:
+
+```bash
+./gradlew bootRun
+```
+
+브라우저에서 [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)로 접속하면 테스트로 생성된 OpenAPI 문서를 확인할 수 있습니다. Swagger UI는 런타임 reflection으로 API 문서를 만들지 않고, `build/api-spec/openapi3.yaml`을 `/openapi/openapi3.yaml`로 서빙해서 표시합니다.
+
+아래 예시는 로컬에서 빠르게 호출해보기 위한 quick reference입니다.
+
 ### 출금
 
 ```http
