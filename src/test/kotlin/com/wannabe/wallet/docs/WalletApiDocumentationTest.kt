@@ -122,6 +122,7 @@ class WalletApiDocumentationTest @Autowired constructor(
 
         mockMvc.perform(
             get("/api/v1/wallets/{walletId}/transactions", walletId)
+                .queryParam("transactionType", "withdraw")
                 .accept(MediaType.APPLICATION_JSON),
         )
             .andExpect(status().isOk)
@@ -135,6 +136,11 @@ class WalletApiDocumentationTest @Autowired constructor(
                             .description("walletId에 해당하는 월렛의 거래내역을 최신 처리 일시 기준으로 조회합니다.")
                             .pathParameters(
                                 parameterWithName("walletId").description("월렛 ID"),
+                            )
+                            .queryParameters(
+                                parameterWithName("transactionType")
+                                    .optional()
+                                    .description("거래 유형 필터. 생략 시 전체 조회, deposit은 입금, withdraw는 출금"),
                             )
                             .responseFields(
                                 fieldWithPath("code")
@@ -185,9 +191,9 @@ class WalletApiDocumentationTest @Autowired constructor(
         fieldWithPath("${prefix}status")
             .type(JsonFieldType.STRING)
             .description("거래 처리 상태"),
-        fieldWithPath("${prefix}withdrawalAmount")
+        fieldWithPath("${prefix}amount")
             .type(JsonFieldType.NUMBER)
-            .description("출금 금액"),
+            .description("거래 금액"),
         fieldWithPath("${prefix}currency")
             .type(JsonFieldType.STRING)
             .description("통화 코드"),
@@ -197,8 +203,8 @@ class WalletApiDocumentationTest @Autowired constructor(
         fieldWithPath("${prefix}version")
             .type(JsonFieldType.NUMBER)
             .description("거래 처리 후 월렛 version"),
-        fieldWithPath("${prefix}withdrawalDate")
+        fieldWithPath("${prefix}processedAt")
             .type(JsonFieldType.STRING)
-            .description("출금 처리 일시"),
+            .description("거래 처리 일시"),
     )
 }

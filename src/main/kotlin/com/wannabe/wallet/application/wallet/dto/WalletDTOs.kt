@@ -1,9 +1,9 @@
 package com.wannabe.wallet.application.wallet.dto
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.wannabe.wallet.application.wallet.exception.IdempotencyKeyConflictException
+import com.wannabe.wallet.application.wallet.exception.IdempotencyRequestInProgressException
 import com.wannabe.wallet.domain.wallet.enums.IdempotencyStatus
-import com.wannabe.wallet.domain.wallet.error.WalletErrorCode
-import com.wannabe.wallet.domain.wallet.exception.WalletException
 import com.wannabe.wallet.domain.wallet.model.IdempotencyRequest
 import com.wannabe.wallet.domain.wallet.model.WalletTransaction
 import com.wannabe.wallet.domain.wallet.model.WalletWithdrawalResult
@@ -15,11 +15,11 @@ data class TransactionDTO(
     val walletId: String,
     val type: String,
     val status: String,
-    val withdrawalAmount: BigDecimal,
+    val amount: BigDecimal,
     val currency: String,
     val balance: BigDecimal,
     val version: Long,
-    val withdrawalDate: LocalDateTime,
+    val processedAt: LocalDateTime,
     val failureCode: String? = null,
     val failureMessage: String? = null,
 )
@@ -35,11 +35,11 @@ fun WalletTransaction.toTransactionDTO(): TransactionDTO {
         walletId = wallet.walletId,
         type = type.name,
         status = status.name,
-        withdrawalAmount = money.amount,
+        amount = money.amount,
         currency = money.currency,
         balance = balanceAfter.amount,
         version = walletVersionAfter,
-        withdrawalDate = processedAt,
+        processedAt = processedAt,
     )
 }
 
@@ -49,11 +49,11 @@ fun WalletWithdrawalResult.toTransactionDTO(): TransactionDTO {
         walletId = walletId,
         type = type.name,
         status = status.name,
-        withdrawalAmount = money.amount,
+        amount = money.amount,
         currency = money.currency,
         balance = balance.amount,
         version = walletVersion,
-        withdrawalDate = processedAt,
+        processedAt = processedAt,
         failureCode = failureCode?.name,
         failureMessage = failureCode?.message,
     )
@@ -67,7 +67,7 @@ fun IdempotencyRequest.toWithdrawalResultDTO(
     val storedResponseSnapshot = responseSnapshot
 
     if (this.requestHash != requestHash) {
-        throw WalletException(WalletErrorCode.IDEMPOTENCY_KEY_CONFLICT)
+        throw IdempotencyKeyConflictException()
     }
 
     if (
@@ -75,7 +75,7 @@ fun IdempotencyRequest.toWithdrawalResultDTO(
         storedHttpStatus == null ||
         storedResponseSnapshot == null
     ) {
-        throw WalletException(WalletErrorCode.IDEMPOTENCY_REQUEST_IN_PROGRESS)
+        throw IdempotencyRequestInProgressException()
     }
 
     return WithdrawalResultDTO(

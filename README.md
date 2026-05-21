@@ -125,11 +125,11 @@ POST /api/v1/wallets/{walletId}/withdrawals
     "walletId": "sample-wallet",
     "type": "WITHDRAWAL",
     "status": "SUCCESS",
-    "withdrawalAmount": 10000,
+    "amount": 10000,
     "currency": "KRW",
     "balance": 90000.0000,
     "version": 1,
-    "withdrawalDate": "2026-05-21T01:30:36.117000"
+    "processedAt": "2026-05-21T01:30:36.117000"
   }
 }
 ```
@@ -156,6 +156,10 @@ POST /api/v1/wallets/{walletId}/withdrawals
 GET /api/v1/wallets/{walletId}/transactions
 ```
 
+`transactionType` query parameter를 생략하면 전체 거래내역을 조회합니다.
+`deposit`은 입금, `withdraw`는 출금만 조회합니다.
+`ALL`은 지원하지 않습니다.
+
 응답:
 
 ```json
@@ -169,11 +173,11 @@ GET /api/v1/wallets/{walletId}/transactions
         "walletId": "sample-wallet",
         "type": "WITHDRAWAL",
         "status": "SUCCESS",
-        "withdrawalAmount": 10000,
+        "amount": 10000,
         "currency": "KRW",
         "balance": 90000.0000,
         "version": 1,
-        "withdrawalDate": "2026-05-21T01:30:36.117000"
+        "processedAt": "2026-05-21T01:30:36.117000"
       }
     ]
   }
@@ -194,6 +198,10 @@ curl -X POST http://localhost:8080/api/v1/wallets/sample-wallet/withdrawals \
 
 ```bash
 curl http://localhost:8080/api/v1/wallets/sample-wallet/transactions
+```
+
+```bash
+curl "http://localhost:8080/api/v1/wallets/sample-wallet/transactions?transactionType=withdraw"
 ```
 
 ## 설계 결정

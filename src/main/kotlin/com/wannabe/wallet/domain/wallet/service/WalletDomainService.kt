@@ -1,11 +1,13 @@
 package com.wannabe.wallet.domain.wallet.service
 
+import com.wannabe.wallet.application.wallet.error.WalletErrorCode
+import com.wannabe.wallet.application.wallet.exception.CurrencyMismatchException
+import com.wannabe.wallet.application.wallet.exception.InvalidAmountException
+import com.wannabe.wallet.application.wallet.exception.WalletNotFoundException
 import com.wannabe.wallet.domain.common.DomainService
 import com.wannabe.wallet.domain.wallet.enums.OperationType
 import com.wannabe.wallet.domain.wallet.enums.TransactionStatus
 import com.wannabe.wallet.domain.wallet.enums.TransactionType
-import com.wannabe.wallet.domain.wallet.error.WalletErrorCode
-import com.wannabe.wallet.domain.wallet.exception.WalletException
 import com.wannabe.wallet.domain.wallet.model.IdempotencyRequest
 import com.wannabe.wallet.domain.wallet.model.Wallet
 import com.wannabe.wallet.domain.wallet.model.WalletTransaction
@@ -23,7 +25,7 @@ class WalletDomainService(
 ) {
     fun validateWithdrawalAmount(money: Money) {
         if (!money.isPositive()) {
-            throw WalletException(WalletErrorCode.INVALID_AMOUNT)
+            throw InvalidAmountException()
         }
     }
 
@@ -53,7 +55,7 @@ class WalletDomainService(
         requestHash: String,
     ): Pair<Wallet, IdempotencyRequest> {
         val wallet = walletQueryStore.findWallet(walletId)
-            ?: throw WalletException(WalletErrorCode.WALLET_NOT_FOUND)
+            ?: throw WalletNotFoundException()
 
         validateCurrency(
             wallet = wallet,
@@ -102,7 +104,7 @@ class WalletDomainService(
 
         if (updatedRows != 1) {
             val latestWallet = walletQueryStore.findWallet(wallet.walletId)
-                ?: throw WalletException(WalletErrorCode.WALLET_NOT_FOUND)
+                ?: throw WalletNotFoundException()
             val errorCode = if (latestWallet.balance < money) {
                 WalletErrorCode.INSUFFICIENT_BALANCE
             } else {
@@ -150,7 +152,7 @@ class WalletDomainService(
 
     private fun validateCurrency(wallet: Wallet, money: Money) {
         if (wallet.currency != money.currency) {
-            throw WalletException(WalletErrorCode.CURRENCY_MISMATCH)
+            throw CurrencyMismatchException()
         }
     }
 }

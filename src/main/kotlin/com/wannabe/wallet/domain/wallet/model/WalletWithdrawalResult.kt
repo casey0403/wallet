@@ -1,8 +1,8 @@
 package com.wannabe.wallet.domain.wallet.model
 
+import com.wannabe.wallet.application.wallet.error.WalletErrorCode
 import com.wannabe.wallet.domain.wallet.enums.TransactionStatus
 import com.wannabe.wallet.domain.wallet.enums.TransactionType
-import com.wannabe.wallet.domain.wallet.error.WalletErrorCode
 import com.wannabe.wallet.domain.wallet.vo.Money
 import java.time.LocalDateTime
 

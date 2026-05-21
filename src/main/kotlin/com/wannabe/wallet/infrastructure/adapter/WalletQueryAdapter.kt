@@ -1,5 +1,6 @@
 package com.wannabe.wallet.infrastructure.adapter
 
+import com.wannabe.wallet.domain.wallet.enums.TransactionType
 import com.wannabe.wallet.domain.wallet.model.IdempotencyRequest
 import com.wannabe.wallet.domain.wallet.model.Wallet
 import com.wannabe.wallet.domain.wallet.model.WalletTransaction
@@ -36,8 +37,18 @@ class WalletQueryAdapter(
             .orElse(null)
     }
 
-    override fun findTransactions(walletId: String): List<WalletTransaction> {
-        return walletTransactionJpaRepository.findAllByWalletWalletIdOrderByProcessedAtDescIdDesc(walletId)
+    override fun findTransactions(walletId: String, transactionType: TransactionType?): List<WalletTransaction> {
+        val transactions = if (transactionType == null) {
+            walletTransactionJpaRepository.findAllByWalletWalletIdOrderByProcessedAtDescIdDesc(
+                walletId = walletId,
+            )
+        } else {
+            walletTransactionJpaRepository.findAllByWalletWalletIdAndTypeOrderByProcessedAtDescIdDesc(
+                walletId = walletId,
+                type = transactionType,
+            )
+        }
+        return transactions
             .map { it.toDomain() }
     }
 }

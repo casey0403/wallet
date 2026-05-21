@@ -6,6 +6,7 @@ enum class WalletStatus {
 }
 
 enum class TransactionType {
+    DEPOSIT,
     WITHDRAWAL,
 }
 
@@ -15,6 +16,7 @@ enum class TransactionStatus {
 }
 
 enum class OperationType {
+    DEPOSIT,
     WITHDRAWAL,
 }
 
