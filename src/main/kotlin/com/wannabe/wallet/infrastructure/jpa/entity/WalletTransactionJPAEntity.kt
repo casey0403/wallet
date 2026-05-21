@@ -71,12 +71,6 @@ class WalletTransactionJPAEntity(
     @Column(name = "wallet_version_after", nullable = false)
     val walletVersionAfter: Long,
 
-    @Column(name = "failure_code", length = 50)
-    val failureCode: String? = null,
-
-    @Column(name = "failure_message", length = 255)
-    val failureMessage: String? = null,
-
     @Column(name = "processed_at", nullable = false)
     val processedAt: LocalDateTime = nowMicros(),
 ) {
@@ -102,8 +96,6 @@ class WalletTransactionJPAEntity(
             ),
             walletVersionBefore = walletVersionBefore,
             walletVersionAfter = walletVersionAfter,
-            failureCode = failureCode,
-            failureMessage = failureMessage,
             processedAt = processedAt,
         )
     }
@@ -130,8 +122,6 @@ fun WalletTransaction.toJPAEntity(
         balanceAfter = balanceAfter.amount,
         walletVersionBefore = walletVersionBefore,
         walletVersionAfter = walletVersionAfter,
-        failureCode = failureCode,
-        failureMessage = failureMessage,
         processedAt = processedAt,
     )
 }

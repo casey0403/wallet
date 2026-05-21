@@ -102,9 +102,8 @@ class WalletWithdrawalProcessor(
         val versionBefore = wallet.version
 
         if (balanceBefore < money) {
-            return recordFailure(
+            return buildFailureResult(
                 wallet = wallet,
-                idempotencyRequest = idempotencyRequest,
                 money = money,
                 transactionId = transactionId,
                 balance = balanceBefore,
@@ -127,9 +126,8 @@ class WalletWithdrawalProcessor(
             } else {
                 WalletErrorCode.WALLET_CONCURRENT_MODIFICATION
             }
-            return recordFailure(
+            return buildFailureResult(
                 wallet = latestWallet,
-                idempotencyRequest = idempotencyRequest,
                 money = money,
                 transactionId = transactionId,
                 balance = latestWallet.balance,
@@ -161,34 +159,29 @@ class WalletWithdrawalProcessor(
         )
     }
 
-    private fun recordFailure(
+    private fun buildFailureResult(
         wallet: Wallet,
-        idempotencyRequest: IdempotencyRequest,
         money: Money,
         transactionId: String,
         balance: Money,
         version: Long,
         errorCode: WalletErrorCode,
     ): WithdrawalResultDTO {
-        val transaction = walletCommandStore.saveTransaction(
-            WalletTransaction(
+        return WithdrawalResultDTO(
+            httpStatus = errorCode.httpStatus(),
+            body = TransactionDTO(
                 transactionId = transactionId,
-                wallet = wallet,
-                idempotencyRequest = idempotencyRequest,
-                type = TransactionType.WITHDRAWAL,
-                status = TransactionStatus.FAILED,
-                money = money,
-                balanceBefore = balance,
-                balanceAfter = balance,
-                walletVersionBefore = version,
-                walletVersionAfter = version,
+                walletId = wallet.walletId,
+                type = TransactionType.WITHDRAWAL.name,
+                status = TransactionStatus.FAILED.name,
+                withdrawalAmount = money.amount,
+                currency = money.currency,
+                balance = balance.amount,
+                version = version,
+                withdrawalDate = LocalDateTime.now(),
                 failureCode = errorCode.name,
                 failureMessage = errorCode.message,
             ),
-        )
-        return WithdrawalResultDTO(
-            httpStatus = errorCode.httpStatus(),
-            body = walletAssembler.toResult(transaction),
         )
     }
 

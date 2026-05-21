@@ -17,8 +17,6 @@ class WalletAssembler {
             balance = transaction.balanceAfter.amount,
             version = transaction.walletVersionAfter,
             withdrawalDate = transaction.processedAt,
-            failureCode = transaction.failureCode,
-            failureMessage = transaction.failureMessage,
         )
     }
 }

@@ -171,13 +171,5 @@ class WalletApiDocumentationTest @Autowired constructor(
         fieldWithPath("${prefix}withdrawalDate")
             .type(JsonFieldType.STRING)
             .description("출금 처리 일시"),
-        fieldWithPath("${prefix}failureCode")
-            .type(JsonFieldType.STRING)
-            .optional()
-            .description("실패 코드"),
-        fieldWithPath("${prefix}failureMessage")
-            .type(JsonFieldType.STRING)
-            .optional()
-            .description("실패 메시지"),
     )
 }

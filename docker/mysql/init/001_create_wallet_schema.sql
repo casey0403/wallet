@@ -60,8 +60,6 @@ CREATE TABLE wallet_transactions (
     balance_after DECIMAL(19,4) NOT NULL,
     wallet_version_before BIGINT NOT NULL,
     wallet_version_after BIGINT NOT NULL,
-    failure_code VARCHAR(50) NULL,
-    failure_message VARCHAR(255) NULL,
     processed_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     PRIMARY KEY (id),
     UNIQUE KEY uk_wallet_transactions_wallet_transaction_id (wallet_id, transaction_id),

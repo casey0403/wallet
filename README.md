@@ -131,6 +131,7 @@ POST /api/v1/wallets/{walletId}/withdrawals
 ```
 
 실패 응답은 `code`, `message`, `data` 형식을 사용합니다.
+실패 요청은 월렛 잔액을 변경하지 않으므로 `wallet_transactions`에는 저장하지 않습니다. 동일 실패 요청의 멱등 응답은 `idempotency_requests.response_snapshot`에 원본 응답 문자열을 보존해 재사용합니다.
 
 잔액 부족 `409 Conflict`:
 
@@ -309,8 +310,6 @@ sequenceDiagram
                 DB-->>Store: updatedRows = 0
                 Processor->>Store: 최신 wallet 재조회
                 Store->>DB: SELECT wallet
-                Processor->>Store: 실패 거래내역 저장
-                Store->>DB: INSERT wallet_transactions FAILED
                 Processor->>Store: responseSnapshot 저장
                 Store->>DB: UPDATE idempotency_requests COMPLETED
                 Processor-->>Lock: 실패 응답

@@ -18,7 +18,5 @@ class WalletTransaction(
     val balanceAfter: Money,
     val walletVersionBefore: Long,
     val walletVersionAfter: Long,
-    val failureCode: String? = null,
-    val failureMessage: String? = null,
     val processedAt: LocalDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS),
 )

@@ -151,7 +151,7 @@ class WalletConcurrencyIntegrationTest @Autowired constructor(
         val wallet = walletRepository.findById(walletId).orElseThrow()
         val transactions = walletTransactionRepository.findAllByWalletWalletIdOrderByProcessedAtDescIdDesc(walletId)
         val successfulCount = transactions.count { it.status == TransactionStatus.SUCCESS }
-        val failedCount = transactions.count { it.status == TransactionStatus.FAILED }
+        val rejectedCount = threadCount - successfulCount
         val withdrawnTotal = BigDecimal(successfulCount) * withdrawalAmount
 
         testReporter.publishEntry(
@@ -160,7 +160,8 @@ class WalletConcurrencyIntegrationTest @Autowired constructor(
                 "threadCount" to threadCount.toString(),
                 "withdrawalAmount" to withdrawalAmount.toPlainString(),
                 "successfulCount" to successfulCount.toString(),
-                "failedCount" to failedCount.toString(),
+                "rejectedCount" to rejectedCount.toString(),
+                "transactionHistoryCount" to transactions.size.toString(),
                 "withdrawnTotal" to withdrawnTotal.toPlainString(),
                 "finalBalance" to wallet.balance.toPlainString(),
                 "walletVersion" to wallet.version.toString(),
@@ -169,13 +170,14 @@ class WalletConcurrencyIntegrationTest @Autowired constructor(
         )
         println(
             "[AFTER] threads=$threadCount amount=$withdrawalAmount " +
-                "success=$successfulCount failed=$failedCount withdrawnTotal=$withdrawnTotal " +
+                "success=$successfulCount rejected=$rejectedCount history=${transactions.size} withdrawnTotal=$withdrawnTotal " +
                 "finalBalance=${wallet.balance} version=${wallet.version} result=OK",
         )
 
         assertThat(wallet.balance).isZero()
         assertThat(successfulCount).isEqualTo(50)
-        assertThat(failedCount).isEqualTo(50)
+        assertThat(rejectedCount).isEqualTo(50)
+        assertThat(transactions).allMatch { it.status == TransactionStatus.SUCCESS }
         assertThat(withdrawnTotal).isEqualByComparingTo("500000.0000")
     }
 
@@ -226,7 +228,6 @@ class WalletConcurrencyIntegrationTest @Autowired constructor(
         assertThat(second.statusCode).isEqualTo(HttpStatus.CONFLICT)
         assertThat(first.body).isEqualTo(second.body)
         assertThat(wallet.balance).isEqualByComparingTo("500000.0000")
-        assertThat(transactions).hasSize(1)
-        assertThat(transactions.single().status).isEqualTo(TransactionStatus.FAILED)
+        assertThat(transactions).isEmpty()
     }
 }
