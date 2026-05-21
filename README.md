@@ -28,8 +28,10 @@ MySQL과 Redis가 실행됩니다.
 
 ### 2. 애플리케이션 실행
 
+로컬 개발 환경에서는 `local` 프로파일을 활성화합니다. 이 프로파일에서만 Swagger UI와 생성된 OpenAPI YAML 정적 서빙이 켜집니다.
+
 ```bash
-./gradlew bootRun
+SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
 ```
 
 서버는 기본적으로 `http://localhost:8080`에서 실행됩니다.
@@ -89,10 +91,10 @@ build/api-spec/openapi3.yaml
 애플리케이션 실행 후 Swagger UI로 확인:
 
 ```bash
-./gradlew bootRun
+SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
 ```
 
-브라우저에서 [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)로 접속하면 테스트로 생성된 OpenAPI 문서를 확인할 수 있습니다. Swagger UI는 런타임 reflection으로 API 문서를 만들지 않고, `build/api-spec/openapi3.yaml`을 `/openapi/openapi3.yaml`로 서빙해서 표시합니다.
+브라우저에서 [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)로 접속하면 테스트로 생성된 OpenAPI 문서를 확인할 수 있습니다. Swagger UI는 런타임 reflection으로 API 문서를 만들지 않고, `build/api-spec/openapi3.yaml`을 `/openapi/openapi3.yaml`로 서빙해서 표시합니다. `application.yaml`에서는 Swagger 노출을 기본 비활성화하고, `application-local.yaml`에서만 활성화해 dev, stage, prod 환경에서 문서 UI가 실수로 노출되지 않도록 했습니다.
 
 아래 예시는 로컬에서 빠르게 호출해보기 위한 quick reference입니다.
 

@@ -29,7 +29,7 @@ server:
       enabled: false
 
 springdoc:
+  api-docs:
+    enabled: false
   swagger-ui:
-    path: /swagger-ui.html
-    url: /openapi/openapi3.yaml
-    disable-swagger-default-url: true
+    enabled: false
