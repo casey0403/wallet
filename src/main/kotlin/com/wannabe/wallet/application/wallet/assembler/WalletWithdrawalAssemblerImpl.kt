@@ -8,6 +8,7 @@ import com.wannabe.wallet.application.wallet.dto.toTransactionDTO
 import com.wannabe.wallet.application.wallet.dto.toWithdrawalResultDTO
 import com.wannabe.wallet.domain.wallet.error.WalletErrorCode
 import com.wannabe.wallet.domain.wallet.port.WalletLock
+import com.wannabe.wallet.domain.wallet.port.WalletLockKey
 import com.wannabe.wallet.domain.wallet.service.WalletDomainService
 import com.wannabe.wallet.domain.wallet.vo.Money
 import org.springframework.http.HttpStatus
@@ -33,7 +34,7 @@ class WalletWithdrawalAssemblerImpl(
         )
         walletDomainService.validateWithdrawalAmount(money)
 
-        return walletLock.execute(walletId = walletId) {
+        return walletLock.execute(key = WalletLockKey.withdraw(walletId = walletId)) {
             withdrawWithLock(
                 walletId = walletId,
                 money = money,

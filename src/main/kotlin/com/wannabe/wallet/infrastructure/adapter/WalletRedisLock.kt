@@ -23,8 +23,7 @@ class WalletRedisLock(
         Long::class.java,
     )
 
-    override fun <T> execute(walletId: String, block: () -> T): T {
-        val key = "wallet:withdraw:$walletId"
+    override fun <T> execute(key: String, block: () -> T): T {
         val token = UUID.randomUUID().toString()
         val acquired = tryLock(
             key = key,
