@@ -8,11 +8,11 @@ fun TransactionDTO.toResponse(): TransactionResponse {
         walletId = walletId,
         type = type,
         status = status,
-        withdrawalAmount = withdrawalAmount,
+        amount = amount,
         currency = currency,
         balance = balance,
         version = version,
-        withdrawalDate = withdrawalDate,
+        processedAt = processedAt,
         failureCode = failureCode,
         failureMessage = failureMessage,
     )

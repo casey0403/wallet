@@ -1,7 +1,6 @@
 package com.wannabe.wallet.infrastructure.adapter
 
-import com.wannabe.wallet.domain.wallet.error.WalletErrorCode
-import com.wannabe.wallet.domain.wallet.exception.WalletException
+import com.wannabe.wallet.application.wallet.exception.WalletBusyException
 import com.wannabe.wallet.domain.wallet.port.WalletLock
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.data.redis.core.script.DefaultRedisScript
@@ -33,7 +32,7 @@ class WalletRedisLock(
         )
 
         if (!acquired) {
-            throw WalletException(WalletErrorCode.WALLET_BUSY)
+            throw WalletBusyException()
         }
 
         return try {

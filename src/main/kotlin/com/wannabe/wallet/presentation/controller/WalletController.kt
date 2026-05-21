@@ -2,6 +2,9 @@ package com.wannabe.wallet.presentation.controller
 
 import com.wannabe.wallet.application.wallet.assembler.WalletTransactionHistoryAssembler
 import com.wannabe.wallet.application.wallet.assembler.WalletWithdrawalAssembler
+import com.wannabe.wallet.domain.wallet.enums.TransactionType
+import com.wannabe.wallet.presentation.error.PresentationErrorCode
+import com.wannabe.wallet.presentation.exception.PresentationException
 import com.wannabe.wallet.presentation.model.response.CommonResponse
 import com.wannabe.wallet.presentation.model.response.TransactionsResponse
 import com.wannabe.wallet.presentation.model.request.WithdrawalRequest
@@ -14,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -50,12 +54,36 @@ class WalletController(
     }
 
     @GetMapping("/{walletId}/transactions")
-    fun getTransactions(@PathVariable walletId: String): CommonResponse<TransactionsResponse> {
+    fun getTransactions(
+        @PathVariable walletId: String,
+        @RequestParam(required = false) transactionType: String?,
+    ): CommonResponse<TransactionsResponse> {
         val response = TransactionsResponse(
-            transactions = walletTransactionHistoryAssembler.getTransactions(walletId).map { it.toResponse() },
+            transactions = walletTransactionHistoryAssembler
+                .getTransactions(
+                    walletId = walletId,
+                    transactionType = transactionType.toTransactionType(),
+                )
+                .map { it.toResponse() },
         )
         return CommonResponse.success(
             data = response,
         )
+    }
+
+    private fun String?.toTransactionType(): TransactionType? {
+        if (this == null) {
+            return null
+        }
+
+        val normalized = trim().uppercase()
+        val enumName = if (normalized == "WITHDRAW") {
+            "WITHDRAWAL"
+        } else {
+            normalized
+        }
+
+        return TransactionType.entries.find { it.name == enumName }
+            ?: throw PresentationException(PresentationErrorCode.INVALID_TRANSACTION_TYPE)
     }
 }

@@ -10,11 +10,11 @@ data class TransactionResponse(
     val walletId: String,
     val type: String,
     val status: String,
-    val withdrawalAmount: BigDecimal,
+    val amount: BigDecimal,
     val currency: String,
     val balance: BigDecimal,
     val version: Long,
-    val withdrawalDate: LocalDateTime,
+    val processedAt: LocalDateTime,
     val failureCode: String? = null,
     val failureMessage: String? = null,
 )

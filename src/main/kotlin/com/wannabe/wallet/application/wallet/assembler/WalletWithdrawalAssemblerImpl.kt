@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.wannabe.wallet.application.common.ApplicationService
 import com.wannabe.wallet.application.wallet.dto.WithdrawalResultDTO
 import com.wannabe.wallet.application.wallet.dto.toResponseSnapshot
+import com.wannabe.wallet.application.wallet.dto.toHttpStatus
 import com.wannabe.wallet.application.wallet.dto.toTransactionDTO
 import com.wannabe.wallet.application.wallet.dto.toWithdrawalResultDTO
-import com.wannabe.wallet.domain.wallet.error.WalletErrorCode
 import com.wannabe.wallet.domain.wallet.port.WalletLock
 import com.wannabe.wallet.domain.wallet.port.WalletLockKey
 import com.wannabe.wallet.domain.wallet.service.WalletDomainService
@@ -91,7 +91,7 @@ class WalletWithdrawalAssemblerImpl(
                 transactionId = transactionId,
             )
             val result = WithdrawalResultDTO(
-                httpStatus = withdrawalResult.failureCode?.httpStatus() ?: HttpStatus.OK.value(),
+                httpStatus = withdrawalResult.failureCode?.toHttpStatus()?.value() ?: HttpStatus.OK.value(),
                 body = withdrawalResult.toTransactionDTO(),
             )
 
@@ -103,20 +103,5 @@ class WalletWithdrawalAssemblerImpl(
 
             result
         } ?: error("Withdrawal transaction did not return a result")
-    }
-
-    private fun WalletErrorCode.httpStatus(): Int {
-        return when (this) {
-            WalletErrorCode.WALLET_NOT_FOUND -> HttpStatus.NOT_FOUND.value()
-            WalletErrorCode.CURRENCY_MISMATCH,
-            WalletErrorCode.INVALID_AMOUNT
-            -> HttpStatus.BAD_REQUEST.value()
-            WalletErrorCode.INSUFFICIENT_BALANCE,
-            WalletErrorCode.IDEMPOTENCY_KEY_CONFLICT,
-            WalletErrorCode.IDEMPOTENCY_REQUEST_IN_PROGRESS,
-            WalletErrorCode.WALLET_BUSY,
-            WalletErrorCode.WALLET_CONCURRENT_MODIFICATION
-            -> HttpStatus.CONFLICT.value()
-        }
     }
 }

@@ -1,7 +1,6 @@
 package com.wannabe.wallet.domain.wallet.vo
 
-import com.wannabe.wallet.domain.wallet.error.WalletErrorCode
-import com.wannabe.wallet.domain.wallet.exception.WalletException
+import com.wannabe.wallet.application.wallet.exception.CurrencyMismatchException
 import java.math.BigDecimal
 
 data class Money(
@@ -10,7 +9,7 @@ data class Money(
 ) : Comparable<Money> {
     init {
         if (!ISO_CURRENCY_PATTERN.matches(currency)) {
-            throw WalletException(WalletErrorCode.CURRENCY_MISMATCH)
+            throw CurrencyMismatchException()
         }
     }
 
@@ -30,7 +29,7 @@ data class Money(
 
     private fun validateSameCurrency(other: Money) {
         if (currency != other.currency) {
-            throw WalletException(WalletErrorCode.CURRENCY_MISMATCH)
+            throw CurrencyMismatchException()
         }
     }
 

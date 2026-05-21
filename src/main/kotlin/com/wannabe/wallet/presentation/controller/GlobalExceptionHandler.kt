@@ -1,7 +1,8 @@
 package com.wannabe.wallet.presentation.controller
 
-import com.wannabe.wallet.domain.wallet.exception.WalletException
-import com.wannabe.wallet.domain.wallet.error.WalletErrorCode
+import com.wannabe.wallet.application.wallet.dto.toHttpStatus
+import com.wannabe.wallet.application.wallet.exception.AbstractWalletException
+import com.wannabe.wallet.presentation.exception.PresentationException
 import com.wannabe.wallet.presentation.model.response.CommonResponse
 import com.wannabe.wallet.presentation.model.response.ErrorDetailResponse
 import jakarta.validation.ConstraintViolationException
@@ -13,9 +14,25 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
-    @ExceptionHandler(WalletException::class)
-    fun handleWalletException(exception: WalletException): ResponseEntity<CommonResponse<ErrorDetailResponse>> {
-        val status = exception.code.httpStatus()
+    @ExceptionHandler(PresentationException::class)
+    fun handlePresentationException(exception: PresentationException): ResponseEntity<CommonResponse<ErrorDetailResponse>> {
+        val status = exception.code.httpStatus
+        return ResponseEntity
+            .status(status)
+            .body(
+                CommonResponse.failed(
+                    status = status.value(),
+                    data = ErrorDetailResponse(
+                        errorCode = exception.code.name,
+                        message = exception.message,
+                    ),
+                ),
+            )
+    }
+
+    @ExceptionHandler(AbstractWalletException::class)
+    fun handleWalletException(exception: AbstractWalletException): ResponseEntity<CommonResponse<ErrorDetailResponse>> {
+        val status = exception.code.toHttpStatus()
         return ResponseEntity
             .status(status)
             .body(
@@ -42,20 +59,5 @@ class GlobalExceptionHandler {
                     ),
                 ),
             )
-    }
-
-    private fun WalletErrorCode.httpStatus(): HttpStatus {
-        return when (this) {
-            WalletErrorCode.WALLET_NOT_FOUND -> HttpStatus.NOT_FOUND
-            WalletErrorCode.CURRENCY_MISMATCH,
-            WalletErrorCode.INVALID_AMOUNT
-            -> HttpStatus.BAD_REQUEST
-            WalletErrorCode.INSUFFICIENT_BALANCE,
-            WalletErrorCode.IDEMPOTENCY_KEY_CONFLICT,
-            WalletErrorCode.IDEMPOTENCY_REQUEST_IN_PROGRESS,
-            WalletErrorCode.WALLET_BUSY,
-            WalletErrorCode.WALLET_CONCURRENT_MODIFICATION
-            -> HttpStatus.CONFLICT
-        }
     }
 }
