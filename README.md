@@ -252,8 +252,7 @@ infrastructure
 1. Redis 분산락을 `wallet:withdraw:{walletId}` 단위로 획득합니다.
 2. 기존 멱등성 요청은 메인 write 트랜잭션 밖에서 짧은 read-only 조회로 확인합니다.
 3. 최초 요청일 때만 짧은 write 트랜잭션을 시작하고, 트랜잭션 안에서 멱등성 요청 재확인 및 생성, 월렛 조건부 atomic update, 성공 거래내역 저장, 응답 snapshot 저장을 하나의 원자 단위로 처리합니다.
-4. 실패 출금은 잔액 변동이 없으므로 거래내역에는 저장하지 않고 멱등성 응답 snapshot만 저장합니다.
-5. Redis lock을 Lua script로 안전하게 해제합니다.
+4. Redis lock을 Lua script로 안전하게 해제합니다.
 
 출금 API의 주요 흐름은 다음과 같습니다.
 
@@ -372,7 +371,9 @@ Redis lock은 같은 wallet의 요청을 짧게 직렬화해서 DB 충돌을 줄
 
 ### 우려사항 및 향후 대책
 
-현재 구현은 과제 요구사항인 "동일한 성공 또는 실패 응답 반환"을 명확히 보장하기 위해 `idempotency_requests.response_snapshot`에 응답 JSON 문자열을 저장합니다. 이 방식은 구현이 단순하고 재요청 시 첫 응답을 그대로 replay할 수 있다는 장점이 있습니다. 특히 실패 출금은 잔액 변동이 없으므로 `wallet_transactions`에 저장하지 않는데, 이때 실패 응답을 동일하게 재현하기 위한 근거로 snapshot을 사용합니다.
+
+
+(1) 현재 구현은 과제 요구사항인 "동일한 성공 또는 실패 응답 반환"을 명확히 보장하기 위해 `idempotency_requests.response_snapshot`에 응답 JSON 문자열을 저장합니다. 이 방식은 구현이 단순하고 재요청 시 첫 응답을 그대로 replay할 수 있다는 장점이 있습니다. 특히 실패 출금은 잔액 변동이 없으므로 `wallet_transactions`에 저장하지 않는데, 이때 실패 응답을 동일하게 재현하기 위한 근거로 snapshot을 사용합니다.
 
 다만 운영 금융/결제 시스템에서 모든 응답을 장기간 문자열 snapshot으로만 보관하는 것은 한계가 있습니다.
 
@@ -389,6 +390,15 @@ Redis lock은 같은 wallet의 요청을 짧게 직렬화해서 DB 충돌을 줄
 - 보안/운영: snapshot 또는 metadata에 암호화, 마스킹, 보관 기간, 삭제 배치, 모니터링을 적용합니다.
 
 즉, 현재 snapshot 방식은 과제의 멱등성 검증과 응답 동일성 보장에 적합한 선택이며, 실제 운영에서는 성공/실패 결과를 구조화해 저장하고 필요한 경우에만 snapshot을 병행하는 방향으로 확장할 수 있습니다.
+
+(2) **Redis 단일 장애점**: 운영 환경에서는 Redis Sentinel 또는 Cluster로 HA를 구성하고 lock 획득 실패 재시도 정책과 메트릭·알림을 적용합니다.
+
+(3) **lock TTL 만료**: 처리 시간을 측정해 TTL을 충분히 설정하고, 필요 시 lock watchdog(TTL 연장) 패턴을 검토합니다. DB 조건부 update와 `version`이 최종 방어선입니다.
+
+(4) **멱등성 snapshot 장기 운영**: 응답 스키마 변경 시 과거 snapshot과 형식이 달라질 수 있습니다. 운영 고도화 시 성공 요청은 `resource_id`로 재구성하고, 실패 요청은 `failure_code`와 metadata를 구조화해 저장합니다.
+
+(5) **`idempotency_requests` 테이블 증가**: 만료된 레코드를 주기적으로 아카이빙하거나 삭제하는 배치 정책이 필요합니다.
+
 
 ## 테스트
 
