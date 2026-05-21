@@ -4,14 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.wannabe.wallet.application.common.ApplicationService
 import com.wannabe.wallet.application.wallet.dto.WithdrawalResultDTO
 import com.wannabe.wallet.application.wallet.dto.toResponseSnapshot
-import com.wannabe.wallet.application.wallet.dto.toHttpStatus
 import com.wannabe.wallet.application.wallet.dto.toTransactionDTO
 import com.wannabe.wallet.application.wallet.dto.toWithdrawalResultDTO
 import com.wannabe.wallet.domain.wallet.port.WalletLock
 import com.wannabe.wallet.domain.wallet.port.WalletLockKey
 import com.wannabe.wallet.domain.wallet.service.WalletDomainService
 import com.wannabe.wallet.domain.wallet.vo.Money
-import org.springframework.http.HttpStatus
 import org.springframework.transaction.support.TransactionTemplate
 import java.math.BigDecimal
 
@@ -91,13 +89,11 @@ class WalletWithdrawalAssemblerImpl(
                 transactionId = transactionId,
             )
             val result = WithdrawalResultDTO(
-                httpStatus = withdrawalResult.failureCode?.toHttpStatus()?.value() ?: HttpStatus.OK.value(),
                 body = withdrawalResult.toTransactionDTO(),
             )
 
             walletDomainService.completeIdempotencyRequest(
                 idempotencyRequest = idempotencyRequest,
-                httpStatus = result.httpStatus,
                 responseSnapshot = result.toResponseSnapshot(objectMapper = objectMapper),
             )
 

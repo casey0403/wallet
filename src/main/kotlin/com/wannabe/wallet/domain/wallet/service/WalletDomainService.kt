@@ -1,13 +1,13 @@
 package com.wannabe.wallet.domain.wallet.service
 
-import com.wannabe.wallet.application.wallet.error.WalletErrorCode
-import com.wannabe.wallet.application.wallet.exception.CurrencyMismatchException
-import com.wannabe.wallet.application.wallet.exception.InvalidAmountException
-import com.wannabe.wallet.application.wallet.exception.WalletNotFoundException
 import com.wannabe.wallet.domain.common.DomainService
+import com.wannabe.wallet.domain.wallet.error.WalletErrorCode
 import com.wannabe.wallet.domain.wallet.enums.OperationType
 import com.wannabe.wallet.domain.wallet.enums.TransactionStatus
 import com.wannabe.wallet.domain.wallet.enums.TransactionType
+import com.wannabe.wallet.domain.wallet.exception.CurrencyMismatchException
+import com.wannabe.wallet.domain.wallet.exception.InvalidAmountException
+import com.wannabe.wallet.domain.wallet.exception.WalletNotFoundException
 import com.wannabe.wallet.domain.wallet.model.IdempotencyRequest
 import com.wannabe.wallet.domain.wallet.model.Wallet
 import com.wannabe.wallet.domain.wallet.model.WalletTransaction
@@ -140,11 +140,9 @@ class WalletDomainService(
 
     fun completeIdempotencyRequest(
         idempotencyRequest: IdempotencyRequest,
-        httpStatus: Int,
         responseSnapshot: String,
     ) {
         idempotencyRequest.complete(
-            httpStatus = httpStatus,
             responseSnapshot = responseSnapshot,
         )
         walletCommandStore.saveIdempotencyRequest(idempotencyRequest)

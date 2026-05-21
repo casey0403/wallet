@@ -1,6 +1,6 @@
 package com.wannabe.wallet.domain.wallet.vo
 
-import com.wannabe.wallet.application.wallet.exception.CurrencyMismatchException
+import com.wannabe.wallet.domain.wallet.exception.CurrencyMismatchException
 import java.math.BigDecimal
 
 data class Money(

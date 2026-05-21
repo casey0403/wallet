@@ -1,7 +1,7 @@
 package com.wannabe.wallet.presentation.controller
 
-import com.wannabe.wallet.application.wallet.dto.toHttpStatus
-import com.wannabe.wallet.application.wallet.exception.AbstractWalletException
+import com.wannabe.wallet.domain.wallet.exception.AbstractWalletException
+import com.wannabe.wallet.presentation.error.toHttpStatus
 import com.wannabe.wallet.presentation.exception.PresentationException
 import com.wannabe.wallet.presentation.model.response.CommonResponse
 import com.wannabe.wallet.presentation.model.response.ErrorDetailResponse
@@ -24,7 +24,7 @@ class GlobalExceptionHandler {
                     status = status.value(),
                     data = ErrorDetailResponse(
                         errorCode = exception.code.name,
-                        message = exception.message,
+                        message = exception.code.message,
                     ),
                 ),
             )
@@ -40,7 +40,7 @@ class GlobalExceptionHandler {
                     status = status.value(),
                     data = ErrorDetailResponse(
                         errorCode = exception.code.name,
-                        message = exception.message,
+                        message = exception.code.message,
                     ),
                 ),
             )

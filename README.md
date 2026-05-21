@@ -384,7 +384,7 @@ Redis lock은 같은 wallet의 요청을 짧게 직렬화해서 DB 충돌을 줄
 
 향후 운영 고도화 시에는 다음 구조를 고려합니다.
 
-- 성공 요청: `idempotency_requests`에는 `resource_type`, `resource_id`, `http_status`를 저장하고, 재요청 시 `wallet_transactions`를 조회해 응답을 재구성합니다.
+- 성공 요청: `idempotency_requests`에는 `resource_type`, `resource_id`를 저장하고, 재요청 시 `wallet_transactions`를 조회해 응답을 재구성합니다.
 - 실패 요청: `failure_code`, `failure_message`, `failed_balance`, `failed_wallet_version` 등 필요한 실패 metadata를 구조화해서 저장합니다.
 - 응답 snapshot: 외부 계약상 byte-level 동일 응답이 꼭 필요한 경우에만 보조 컬럼으로 유지하거나, 짧은 TTL을 두고 만료시킵니다.
 - 보안/운영: snapshot 또는 metadata에 암호화, 마스킹, 보관 기간, 삭제 배치, 모니터링을 적용합니다.

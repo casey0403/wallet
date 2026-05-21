@@ -1,6 +1,6 @@
 package com.wannabe.wallet.infrastructure.adapter
 
-import com.wannabe.wallet.application.wallet.exception.WalletBusyException
+import com.wannabe.wallet.domain.wallet.exception.WalletBusyException
 import com.wannabe.wallet.domain.wallet.port.WalletLock
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.data.redis.core.script.DefaultRedisScript

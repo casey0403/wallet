@@ -14,15 +14,13 @@ class IdempotencyRequest(
     val operationType: OperationType,
     val money: Money,
     var status: IdempotencyStatus = IdempotencyStatus.PROCESSING,
-    var httpStatus: Int? = null,
     var responseSnapshot: String? = null,
     val createdAt: LocalDateTime? = null,
     var completedAt: LocalDateTime? = null,
     val expiresAt: LocalDateTime,
 ) {
-    fun complete(httpStatus: Int, responseSnapshot: String) {
+    fun complete(responseSnapshot: String) {
         this.status = IdempotencyStatus.COMPLETED
-        this.httpStatus = httpStatus
         this.responseSnapshot = responseSnapshot
         this.completedAt = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS)
     }

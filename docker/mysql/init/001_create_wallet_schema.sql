@@ -34,7 +34,6 @@ CREATE TABLE idempotency_requests (
     amount DECIMAL(19,4) NOT NULL,
     currency VARCHAR(3) NOT NULL,
     status VARCHAR(20) NOT NULL,
-    http_status INT NULL,
     response_snapshot LONGTEXT NULL,
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     completed_at DATETIME(6) NULL,

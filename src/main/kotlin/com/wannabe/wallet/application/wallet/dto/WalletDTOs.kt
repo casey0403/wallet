@@ -1,8 +1,8 @@
 package com.wannabe.wallet.application.wallet.dto
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.wannabe.wallet.application.wallet.exception.IdempotencyKeyConflictException
-import com.wannabe.wallet.application.wallet.exception.IdempotencyRequestInProgressException
+import com.wannabe.wallet.domain.wallet.exception.IdempotencyKeyConflictException
+import com.wannabe.wallet.domain.wallet.exception.IdempotencyRequestInProgressException
 import com.wannabe.wallet.domain.wallet.enums.IdempotencyStatus
 import com.wannabe.wallet.domain.wallet.model.IdempotencyRequest
 import com.wannabe.wallet.domain.wallet.model.WalletTransaction
@@ -25,7 +25,6 @@ data class TransactionDTO(
 )
 
 data class WithdrawalResultDTO(
-    val httpStatus: Int,
     val body: TransactionDTO,
 )
 
@@ -63,7 +62,6 @@ fun IdempotencyRequest.toWithdrawalResultDTO(
     requestHash: String,
     objectMapper: ObjectMapper,
 ): WithdrawalResultDTO {
-    val storedHttpStatus = httpStatus
     val storedResponseSnapshot = responseSnapshot
 
     if (this.requestHash != requestHash) {
@@ -72,14 +70,12 @@ fun IdempotencyRequest.toWithdrawalResultDTO(
 
     if (
         status != IdempotencyStatus.COMPLETED ||
-        storedHttpStatus == null ||
         storedResponseSnapshot == null
     ) {
         throw IdempotencyRequestInProgressException()
     }
 
     return WithdrawalResultDTO(
-        httpStatus = storedHttpStatus,
         body = objectMapper.readValue(storedResponseSnapshot, TransactionDTO::class.java),
     )
 }

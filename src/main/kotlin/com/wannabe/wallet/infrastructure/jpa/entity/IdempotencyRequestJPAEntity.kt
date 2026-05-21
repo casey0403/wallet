@@ -56,9 +56,6 @@ class IdempotencyRequestJPAEntity(
     @Column(name = "status", nullable = false, length = 20)
     var status: IdempotencyStatus = IdempotencyStatus.PROCESSING,
 
-    @Column(name = "http_status")
-    var httpStatus: Int? = null,
-
     @Column(name = "response_snapshot", columnDefinition = "LONGTEXT")
     var responseSnapshot: String? = null,
 
@@ -83,7 +80,6 @@ class IdempotencyRequestJPAEntity(
                 currency = currency,
             ),
             status = status,
-            httpStatus = httpStatus,
             responseSnapshot = responseSnapshot,
             createdAt = createdAt,
             completedAt = completedAt,
@@ -102,7 +98,6 @@ fun IdempotencyRequest.toJPAEntity(walletJPAEntity: WalletJPAEntity): Idempotenc
         amount = money.amount,
         currency = money.currency,
         status = status,
-        httpStatus = httpStatus,
         responseSnapshot = responseSnapshot,
         createdAt = createdAt,
         completedAt = completedAt,

@@ -1,10 +1,13 @@
-package com.wannabe.wallet.application.wallet.exception
+package com.wannabe.wallet.domain.wallet.exception
 
-import com.wannabe.wallet.application.wallet.error.WalletErrorCode
-import com.wannabe.wallet.presentation.exception.ApiCommonException
+import com.wannabe.wallet.domain.wallet.error.WalletErrorCode
 
-abstract class AbstractWalletException(val code: WalletErrorCode, vararg args: Any) :
-    ApiCommonException(code, args)
+abstract class AbstractWalletException(
+    val code: WalletErrorCode,
+    vararg args: Any,
+) : RuntimeException(code.message) {
+    val args: Array<out Any> = args
+}
 
 class WalletNotFoundException : AbstractWalletException(WalletErrorCode.WALLET_NOT_FOUND)
 

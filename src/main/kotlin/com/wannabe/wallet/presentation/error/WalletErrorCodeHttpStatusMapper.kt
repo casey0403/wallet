@@ -1,6 +1,6 @@
-package com.wannabe.wallet.application.wallet.dto
+package com.wannabe.wallet.presentation.error
 
-import com.wannabe.wallet.application.wallet.error.WalletErrorCode
+import com.wannabe.wallet.domain.wallet.error.WalletErrorCode
 import org.springframework.http.HttpStatus
 
 fun WalletErrorCode.toHttpStatus(): HttpStatus {
