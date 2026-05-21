@@ -359,6 +359,18 @@ Redis lock은 같은 wallet의 요청을 짧게 직렬화해서 DB 충돌을 줄
 - `SELECT FOR UPDATE`를 오래 유지하지 않고 조건부 `UPDATE`를 사용하여 DB row lock 점유 시간을 줄였습니다.
 - Redis 장애 시 출금 API가 영향을 받을 수 있습니다. 운영 환경에서는 Redis HA 구성, lock 획득 실패 재시도 정책, timeout/metrics/alerting이 필요합니다.
 
+### 거래내역 저장 정책
+
+`wallet_transactions`에는 **성공 거래만** 저장합니다. 잔액 부족, 동시성 충돌 등으로 거부된 출금은 `wallet_transactions`에 기록하지 않습니다.
+
+이유:
+
+- 잔액 변동이 없는 실패 시도를 거래내역으로 보여주면 사용자 혼란을 유발합니다.
+- 실패 이력은 멱등성 재현과 감사 목적으로 `idempotency_requests` 테이블에 보존합니다 (`response_snapshot`, `status`, `failure_code` 참고).
+- `wallet_transactions`는 월렛 잔액에 실제 영향을 준 원장 레코드만 포함하므로, 잔액 이력 추적과 정합성 검증에 일관성이 유지됩니다.
+
+따라서 `wallet_transactions` 테이블을 직접 조회하면 모든 레코드가 `status = 'SUCCESS'`인 것이 정상입니다. 실패 출금 이력은 `idempotency_requests` 테이블의 `status = 'COMPLETED'`이고 `response_snapshot`에 실패 응답이 저장된 레코드에서 확인할 수 있습니다.
+
 ### 멱등성
 
 `transactionId`를 멱등성 키로 사용합니다.
@@ -455,15 +467,27 @@ BUILD SUCCESSFUL in 16s
 결과:
 
 ```text
-[AFTER] threads=100 amount=10000.0000 success=50 failed=50 withdrawnTotal=500000.0000 finalBalance=0.0000 version=50 result=OK
+[AFTER] threads=100 amount=10000 success=50 rejected=50 history=50 withdrawnTotal=500000 finalBalance=0.0000 version=50 result=OK
 ```
+
+필드 설명:
+
+| 필드 | 값 | 설명 |
+|------|----|------|
+| `amount` | `10000` | 스레드당 출금 요청 금액 (Long) |
+| `success` | `50` | DB에 저장된 성공 거래 수 |
+| `rejected` | `50` | 잔액 부족으로 거부된 요청 수 (`threadCount - success`) |
+| `history` | `50` | `wallet_transactions` 테이블에 실제 저장된 레코드 수 |
+| `withdrawnTotal` | `500000` | 성공 출금 합계 |
+| `finalBalance` | `0.0000` | 최종 월렛 잔액 (DB DECIMAL(19,4) 형식) |
 
 해석:
 
-- 초기 잔액 `500000.0000`에서 `10000.0000` 출금은 정확히 50번만 성공했습니다.
-- 나머지 50번은 잔액 부족으로 실패했습니다.
+- 초기 잔액 `500000.0000`에서 10,000원 출금은 정확히 50번만 성공했습니다.
+- 나머지 50번은 잔액 부족(`INSUFFICIENT_BALANCE`)으로 거부됐습니다.
+- `history=50`은 `wallet_transactions`에 성공 거래만 저장됨을 의미합니다 (실패 거래 저장 정책은 설계 결정 섹션 참고).
 - 최종 잔액은 `0.0000`이며 음수가 되지 않았습니다.
-- 성공 출금 총액은 초기 잔액을 초과하지 않았습니다.
+- 성공 출금 합계(`500000`)는 초기 잔액을 초과하지 않았습니다.
 
 추가 자료는 [docs/concurrency-test.md](docs/concurrency-test.md)에 정리했습니다.
 
